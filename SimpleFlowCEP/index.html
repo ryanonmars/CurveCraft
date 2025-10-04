@@ -15,12 +15,13 @@
               <!-- Curve Preview Area -->
               <div class="preview-section">
                   <canvas id="curveCanvas" width="280" height="200"></canvas>
-                  <div class="values-display">
-                      <span id="valuesDisplay">[0.25, 0.1, 0.25, 1]</span>
-                  </div>
-                  <div class="instructions">
-                      <small>Drag the handles to adjust the curve</small>
-                  </div>
+              <div class="values-display">
+                  <span id="valuesDisplay">[0.25, 0.1, 0.25, 1]</span>
+                  <button id="copyValues">Copy</button>
+              </div>
+              <div class="instructions">
+                  <small>Drag the handles to adjust the curve</small>
+              </div>
               </div>
         
         <!-- Apply Button -->
@@ -28,10 +29,10 @@
             <button id="applyButton">Apply Curve</button>
         </div>
         
-        <!-- Curve Library -->
-        <div class="library-section">
-            <h4>Curve Library</h4>
-            <div class="curve-buttons">
+        <!-- Custom Editor Section -->
+        <div class="custom-section">
+            <h4>Custom Curve Editor</h4>
+            <div class="custom-controls">
                 <div class="curve-item active" data-curve="custom">
                     <canvas class="curve-preview-small" id="custom-preview" width="50" height="30"></canvas>
                     <div class="curve-name">Custom</div>
@@ -43,6 +44,14 @@
                 <input type="text" id="curveName" placeholder="Curve name" maxlength="20">
                 <button id="saveCurve">Save</button>
                 <button id="loadCurve">Load</button>
+            </div>
+        </div>
+        
+        <!-- Default Curves Library -->
+        <div class="library-section">
+            <h4>Default Curves</h4>
+            <div class="curve-buttons" id="savedCurves">
+                <div class="no-curves">No default curves yet</div>
             </div>
         </div>
         

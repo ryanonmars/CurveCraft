@@ -23,6 +23,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedCurve = 'custom';
     let savedCurves = {};
     
+    // Default curves that are always available
+    const defaultCurves = {
+        'Ease Out': [0.344, 0.053, 0.002, 1.000],
+        'Ease In': [0.927, 0.000, 0.852, 0.953],
+        'Ease In-Out': [0.694, 0.000, 0.306, 1.000],
+        'Smooth Linear': [0.285, 0.000, 0.648, 1.000]
+    };
+    
     // Interactive curve editing
     let isDragging = false;
     let dragHandle = null;
@@ -35,6 +43,34 @@ document.addEventListener('DOMContentLoaded', function() {
         curveButtons: curveButtons.length
     });
 
+    // Export saved curves for packaging
+    function exportSavedCurves() {
+        const saved = localStorage.getItem('simpleFlowCurves');
+        if (saved) {
+            console.log('=== COPY THIS CODE TO MAKE DEFAULTS ===');
+            console.log('const defaultCurves = ' + saved + ';');
+            console.log('=== END COPY ===');
+            return JSON.parse(saved);
+        }
+        return {};
+    }
+
+    // Load default curves
+    function loadDefaultCurves() {
+        const savedCurvesContainer = document.getElementById('savedCurves');
+        
+        // Remove "no curves" message if it exists
+        const noCurves = savedCurvesContainer.querySelector('.no-curves');
+        if (noCurves) {
+            noCurves.remove();
+        }
+        
+        // Load default curves
+        Object.keys(defaultCurves).forEach(name => {
+            createCurveButton(name, defaultCurves[name]);
+        });
+    }
+
     // Initial curve draw
     if (curveCanvas) {
         drawCurve(curveCanvas, selectedCurve);
@@ -43,6 +79,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize custom curve
         window.customCurve = customCurve;
         updateCustomCurve();
+        
+        // Load default curves
+        loadDefaultCurves();
     }
 
     // Handle curve button clicks
@@ -203,7 +242,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to create a new curve button
     function createCurveButton(name, curveValues) {
-        const curveButtonsContainer = document.querySelector('.curve-buttons');
+        const curveButtonsContainer = document.getElementById('savedCurves');
+        
+        // Remove "no curves" message if it exists
+        const noCurves = curveButtonsContainer.querySelector('.no-curves');
+        if (noCurves) {
+            noCurves.remove();
+        }
         
         // Create the button element
         const button = document.createElement('div');
@@ -253,6 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const curveNameInput = document.getElementById('curveName');
     const saveCurveButton = document.getElementById('saveCurve');
     const loadCurveButton = document.getElementById('loadCurve');
+    const copyValuesButton = document.getElementById('copyValues');
 
     if (saveCurveButton) {
         saveCurveButton.addEventListener('click', () => {
@@ -278,6 +324,24 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 status.textContent = 'Curve not found';
             }
+        });
+    }
+
+    if (copyValuesButton) {
+        copyValuesButton.addEventListener('click', () => {
+            const values = customCurve.map(v => v.toFixed(3)).join(', ');
+            navigator.clipboard.writeText(`[${values}]`).then(() => {
+                status.textContent = `Copied: [${values}]`;
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = `[${values}]`;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                status.textContent = `Copied: [${values}]`;
+            });
         });
     }
 

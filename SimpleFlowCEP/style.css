@@ -65,9 +65,10 @@ button:active {
 }
 
 .curve-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    justify-items: center;
 }
 
 .curve-item {
@@ -131,8 +132,10 @@ button:active {
     background-color: #1e1e1e;
     border-radius: 3px;
     border: 1px solid #666;
-    display: block;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
@@ -142,6 +145,20 @@ button:active {
     color: #ffffff;
     font-family: monospace;
     font-size: 10px;
+}
+
+.values-display button {
+    padding: 2px 6px;
+    background-color: #0078d4;
+    border: none;
+    border-radius: 3px;
+    color: #ffffff;
+    font-size: 9px;
+    cursor: pointer;
+}
+
+.values-display button:hover {
+    background-color: #106ebe;
 }
 
 .save-controls {
@@ -174,4 +191,26 @@ button:active {
 
 .save-controls button:hover {
     background-color: #106ebe;
+}
+
+.custom-section {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    border: 1px solid #444;
+}
+
+.custom-controls {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.no-curves {
+    text-align: center;
+    color: #888;
+    font-size: 12px;
+    font-style: italic;
+    padding: 20px;
 }
