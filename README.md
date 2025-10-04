@@ -1,139 +1,107 @@
-# Flow - Free Easing Curve Editor for After Effects
+# SimpleFlowCEP - Flow-like Easing Extension for After Effects
 
-A comprehensive, free alternative to the commercial Flow plugin for Adobe After Effects. This collection provides intuitive easing curve editing with visual controls, preset libraries, and CSS integration.
-
-## Files Included
-
-- **Flow.jsx** - Basic version with essential features
-- **FlowAdvanced.jsx** - Enhanced version with better visualization and more presets
-- **EasingLibrary.jsx** - Comprehensive easing functions library
-- **README.md** - This documentation
+A CEP (Common Extensibility Platform) extension that replicates the core functionality of the commercial Flow plugin, providing intuitive curve editing and easing application for After Effects keyframes.
 
 ## Features
 
-### Core Functionality
-- Visual curve editor with real-time preview
-- Cubic-bezier control points with sliders
-- Live curve visualization with grid
-- CSS cubic-bezier import/export
-- Direct application to After Effects keyframes
-
-### Preset Library
-- **Basic Presets**: Linear, Ease, Ease In/Out, Fast In/Out
-- **Advanced Presets**: Bounce, Elastic, Back, Circular, Cubic, Exponential, Quadratic, Quartic
-
-### CSS Integration
-- Import cubic-bezier values from CSS
-- Export curves as CSS cubic-bezier functions
-- Seamless web-to-video workflow
+- **6 Curve Presets**: Linear, Ease In, Ease Out, Ease In-Out, Bounce, Elastic
+- **Visual Curve Preview**: Interactive canvas showing the selected curve
+- **Real-time Updates**: Curve changes as you select different presets
+- **Professional UI**: Dark theme matching After Effects
+- **Proper Keyframe Easing**: Uses After Effects' native easing system
 
 ## Installation
 
-1. Copy the `.jsx` files to your After Effects Scripts folder:
-   - **Windows**: `C:\Program Files\Adobe\Adobe After Effects [version]\Support Files\Scripts\`
-   - **Mac**: `/Applications/Adobe After Effects [version]/Scripts/`
+### Method 1: Manual Installation (Recommended)
 
-2. Restart After Effects
+1. **Copy the extension folder** to your After Effects CEP extensions directory:
+   - **Windows**: `C:\Program Files\Adobe\Adobe After Effects [version]\Support Files\CEP\extensions\`
+   - **macOS**: `~/Library/Application Support/Adobe/CEP/extensions/`
 
-3. Run the script from:
-   - **File > Scripts > Flow** (or FlowAdvanced)
+2. **Enable unsigned extensions** (required for development):
+   - **Windows**: Create/edit `C:\Users\[username]\AppData\Roaming\Adobe\CEP\extensions\com.adobe.CSXS.6.0\`
+   - **macOS**: Create/edit `~/Library/Application Support/Adobe/CEP/extensions/com.adobe.CSXS.6.0/`
+   - Add a file called `debug` (no extension) with content: `1`
+
+3. **Restart After Effects**
+
+4. **Find the extension**: Window → Extensions → SimpleFlowCEP
 
 ## Usage
 
-### Basic Workflow
-1. Open a composition with animated layers
-2. Select a layer with keyframes
-3. Select the property you want to ease
-4. Open Flow plugin
-5. Adjust curve using sliders or presets
-6. Click "Apply to Selection"
+1. **Open After Effects** and create a composition
+2. **Add keyframes** to any property (Position, Scale, Rotation, Opacity, etc.)
+3. **Select the layer** or specific properties
+4. **Open SimpleFlowCEP**: Window → Extensions → SimpleFlowCEP
+5. **Choose a curve** from the dropdown
+6. **Click "Apply Curve"** to apply the easing
 
-### Curve Editing
-- Use the four sliders (X1, Y1, X2, Y2) to control the cubic-bezier curve
-- Values range from 0 to 1
-- Real-time preview updates as you adjust
+## Curve Types
 
-### Presets
-- Click any preset button to instantly apply that easing
-- Basic tab contains common easing functions
-- Advanced tab contains more complex easing types
+- **Linear**: No easing (0, 0, 1, 1)
+- **Ease In**: Slow start (0.42, 0, 1, 1)
+- **Ease Out**: Slow end (0, 0, 0.58, 1)
+- **Ease In-Out**: Slow start and end (0.42, 0, 0.58, 1)
+- **Bounce**: Bouncy animation
+- **Elastic**: Elastic animation
 
-### CSS Integration
-- Paste cubic-bezier values in the CSS input field
-- Click "Update" to apply the curve
-- Click "Copy CSS" to copy current curve as CSS
+## Technical Details
 
-## Advanced Features
+### How It Works
+The extension uses After Effects' native `setTemporalEaseAtKey()` function to create smooth bezier curves. Unlike simple expressions, this approach:
+- Preserves your original keyframe positions
+- Creates mathematically accurate curves
+- Works with all property types (Position, Scale, Rotation, Opacity, etc.)
+- Shows curves in the Graph Editor as native keyframe easing
 
-### Custom Easing Functions
-The EasingLibrary.jsx provides access to all easing functions programmatically:
-
-```javascript
-// Example: Apply bounce easing
-var bounceEasing = EasingLibrary.bounceOut;
-applyEasing(property, bounceEasing, startTime, endTime);
+### File Structure
 ```
-
-### Expression Integration
-The plugin generates After Effects expressions that work with any property:
-
-```javascript
-// Generated expression example
-var t = (time - 0) / (2 - 0);
-var eased = EasingLibrary.bounceOut(Math.max(0, Math.min(1, t)));
-linear(eased, 0, 1, 0, 100);
+SimpleFlowCEP/
+├── CSXS/
+│   └── manifest.xml          # CEP manifest
+├── client/
+│   ├── index.html            # Main UI
+│   ├── style.css             # Styling
+│   ├── curves.js             # Curve drawing logic
+│   └── main.js               # UI logic and AE communication
+└── jsx/
+    └── host.jsx              # After Effects integration
 ```
 
 ## Troubleshooting
 
-### Common Issues
-- **"Please select a composition"**: Make sure a composition is active
-- **"Please select a layer"**: Select a layer in the composition
-- **"Property must have at least 2 keyframes"**: Add keyframes to the selected property
+### Extension Not Appearing
+1. Check that the extension is in the correct CEP directory
+2. Verify the debug file is created and contains "1"
+3. Restart After Effects completely
+4. Check After Effects version compatibility (2020+)
 
-### Performance
-- The plugin uses After Effects expressions for smooth playback
-- Complex curves may impact render performance
-- Consider using keyframes for final renders if needed
+### Curves Not Applying
+1. Ensure you have keyframes on the selected properties
+2. Check that properties have at least 2 keyframes
+3. Try selecting the specific property instead of just the layer
+4. Verify the extension shows "Success" message
 
-## Customization
+### Performance Issues
+1. The extension uses native After Effects easing, so it's very efficient
+2. No expressions are added, so there's no performance impact
+3. Curves are visible in the Graph Editor as native keyframe easing
 
-### Adding New Presets
-Edit the preset arrays in FlowAdvanced.jsx:
+## Why CEP Instead of Scripts?
 
-```javascript
-var basicPresets = [
-    {name: "Custom", values: [0.1, 0.2, 0.8, 0.9]},
-    // ... existing presets
-];
-```
+After Effects' ExtendScript API is very limited when it comes to creating custom curves. The commercial Flow plugin works because it's a CEP extension that can:
 
-### Modifying the Interface
-The UI is built using After Effects ScriptUI, making it easy to customize:
-- Adjust panel sizes in `preferredSize` properties
-- Modify colors in `graphics.foregroundColor` calls
-- Add new controls by extending the group structure
-
-## Technical Details
-
-### Cubic-Bezier Implementation
-The plugin uses a robust cubic-bezier solver that handles all valid curve types, including those that exceed the 0-1 range for advanced effects.
-
-### Expression Generation
-Curves are applied using After Effects expressions that:
-- Calculate normalized time progress
-- Apply the easing function
-- Map the result to the property's value range
-
-### Compatibility
-- After Effects CC 2018 and later
-- Works with all property types (position, scale, rotation, opacity, etc.)
-- Compatible with both keyframe and expression-based animations
+- **Create Interactive UIs**: HTML5 canvas for curve editing
+- **Real-time Communication**: Direct integration with After Effects
+- **Professional Interface**: Modern, responsive UI
+- **Native Keyframe Manipulation**: Direct access to After Effects' easing system
 
 ## License
 
-This project is provided as-is for educational and personal use. Feel free to modify and distribute according to your needs.
+This extension is provided as-is for educational and personal use. It replicates functionality of the commercial Flow plugin by Lova.
 
 ## Credits
 
-Inspired by the commercial Flow plugin by Zack Lovatt and renderTom. Easing functions based on Robert Penner's easing equations.
+- Inspired by Flow plugin by Lova (flow.lova.tt)
+- Built using Adobe CEP (Common Extensibility Platform)
+- Based on the CEP extension template approach
