@@ -11,26 +11,41 @@
 <body>
     <div class="container">
         <h3>SimpleFlowCEP</h3>
-        <div>
-            <label>Curve Library:</label>
-            <select id="curveSelect">
-                <option value="linear">Linear</option>
-                <option value="smooth" selected>Smooth S-Curve</option>
-                <option value="easeIn">Ease In</option>
-                <option value="easeOut">Ease Out</option>
-                <option value="easeInOut">Ease In-Out</option>
-                <option value="bounce">Bounce</option>
-                <option value="elastic">Elastic</option>
-            </select>
-        </div>
-        <div>
-            <canvas id="curveCanvas" width="280" height="200"></canvas>
-        </div>
+        
+              <!-- Curve Preview Area -->
+              <div class="preview-section">
+                  <canvas id="curveCanvas" width="280" height="200"></canvas>
+                  <div class="values-display">
+                      <span id="valuesDisplay">[0.25, 0.1, 0.25, 1]</span>
+                  </div>
+                  <div class="instructions">
+                      <small>Drag the handles to adjust the curve</small>
+                  </div>
+              </div>
+        
+        <!-- Apply Button -->
         <div class="controls">
-            <button id="testButton">Test Connection</button>
             <button id="applyButton">Apply Curve</button>
-            <button id="refreshButton">Refresh Selection</button>
         </div>
+        
+        <!-- Curve Library -->
+        <div class="library-section">
+            <h4>Curve Library</h4>
+            <div class="curve-buttons">
+                <div class="curve-item active" data-curve="custom">
+                    <canvas class="curve-preview-small" id="custom-preview" width="50" height="30"></canvas>
+                    <div class="curve-name">Custom</div>
+                </div>
+            </div>
+            
+            <!-- Save/Load Controls -->
+            <div class="save-controls">
+                <input type="text" id="curveName" placeholder="Curve name" maxlength="20">
+                <button id="saveCurve">Save</button>
+                <button id="loadCurve">Load</button>
+            </div>
+        </div>
+        
         <div class="status" id="status">Select keyframes and apply a curve</div>
     </div>
 </body>

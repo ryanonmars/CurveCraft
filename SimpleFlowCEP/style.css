@@ -18,11 +18,15 @@ h3 {
     font-size: 16px;
 }
 
-label {
+h4 {
+    margin: 0 0 10px 0;
     color: #cccccc;
     font-size: 12px;
-    margin-bottom: 5px;
-    display: block;
+    font-weight: 500;
+}
+
+.preview-section {
+    text-align: center;
 }
 
 #curveCanvas {
@@ -56,19 +60,50 @@ button:active {
     background-color: #005a9e;
 }
 
-select {
-    width: 100%;
-    padding: 8px;
-    background-color: #3a3a3a;
-    color: #ffffff;
-    border: 1px solid #555;
-    border-radius: 4px;
-    font-size: 12px;
+.library-section {
+    margin-top: 10px;
 }
 
-select:focus {
-    outline: none;
-    border-color: #0078d4;
+.curve-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.curve-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: transparent;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+}
+
+.curve-item:hover {
+    background-color: #3a3a3a;
+}
+
+.curve-item.active {
+    background-color: transparent;
+}
+
+.curve-name {
+    font-size: 11px;
+    color: #ffffff;
+}
+
+.curve-preview-small {
+    width: 50px;
+    height: 30px;
+    border: 1px solid #666;
+    background-color: #1e1e1e;
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: block;
 }
 
 .status {
@@ -78,4 +113,65 @@ select:focus {
     padding: 5px;
     background-color: #1e1e1e;
     border-radius: 4px;
+}
+
+.instructions {
+    margin-top: 4px;
+    text-align: center;
+}
+
+.instructions small {
+    color: #888;
+    font-size: 10px;
+}
+
+.values-display {
+    margin-top: 8px;
+    padding: 4px 8px;
+    background-color: #1e1e1e;
+    border-radius: 3px;
+    border: 1px solid #666;
+    display: block;
+    text-align: center;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.values-display span {
+    color: #ffffff;
+    font-family: monospace;
+    font-size: 10px;
+}
+
+.save-controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-controls input {
+    padding: 4px 8px;
+    background-color: #1e1e1e;
+    border: 1px solid #666;
+    border-radius: 3px;
+    color: #ffffff;
+    font-size: 11px;
+    width: 120px;
+}
+
+.save-controls button {
+    padding: 4px 8px;
+    background-color: #0078d4;
+    border: none;
+    border-radius: 3px;
+    color: #ffffff;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.save-controls button:hover {
+    background-color: #106ebe;
 }

@@ -10,60 +10,289 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const csInterface = new CSInterface();
     console.log('CSInterface initialized');
-    const curveSelect = document.getElementById('curveSelect');
     const curveCanvas = document.getElementById('curveCanvas');
-    const testButton = document.getElementById('testButton');
     const applyButton = document.getElementById('applyButton');
-    const refreshButton = document.getElementById('refreshButton');
     const status = document.getElementById('status');
+    const curveButtons = document.querySelectorAll('.curve-item');
+    
+    // Curve control elements
+    const valuesDisplay = document.getElementById('valuesDisplay');
+    
+    // Current custom curve values
+    let customCurve = [0.25, 0.1, 0.25, 1];
+    let selectedCurve = 'custom';
+    let savedCurves = {};
+    
+    // Interactive curve editing
+    let isDragging = false;
+    let dragHandle = null;
+    let canvasRect = null;
 
     console.log('Elements found:', {
-        curveSelect: !!curveSelect,
         curveCanvas: !!curveCanvas,
-        testButton: !!testButton,
         applyButton: !!applyButton,
-        refreshButton: !!refreshButton,
-        status: !!status
+        status: !!status,
+        curveButtons: curveButtons.length
     });
 
     // Initial curve draw
-    if (curveCanvas && curveSelect) {
-        drawCurve(curveCanvas, curveSelect.value);
+    if (curveCanvas) {
+        drawCurve(curveCanvas, selectedCurve);
+        drawSmallPreview('custom-preview', 'custom');
+        
+        // Initialize custom curve
+        window.customCurve = customCurve;
+        updateCustomCurve();
     }
 
-    // Test connection to After Effects
-    testButton.addEventListener('click', () => {
-        console.log('Test button clicked');
-        status.textContent = 'Testing connection...';
-        
-        // Simple test first
-        try {
-            csInterface.evalScript('"Hello from After Effects"', (result) => {
-                console.log('Test result:', result);
-                if (result && result !== 'null' && result !== 'Error') {
-                    status.textContent = 'Connected! AE responded: ' + result;
-                } else {
-                    status.textContent = 'Error: No response from After Effects';
-                }
-            });
-        } catch (e) {
-            console.error('Test error:', e);
-            status.textContent = 'Error: ' + e.toString();
-        }
+    // Handle curve button clicks
+    curveButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            console.log('Button clicked, dataset.curve:', button.dataset.curve);
+            
+            // Remove active class from all buttons
+            curveButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Update selected curve and preview
+            selectedCurve = button.dataset.curve;
+            console.log('Selected curve updated to:', selectedCurve);
+            
+            drawCurve(curveCanvas, selectedCurve);
+            
+            // If custom curve, update the custom curve display
+            if (selectedCurve === 'custom') {
+                updateCustomCurve();
+            }
+        });
     });
 
-    // Update curve preview on selection
-    curveSelect.addEventListener('change', () => {
-        drawCurve(curveCanvas, curveSelect.value);
-    });
+    // Interactive curve editing functions
+    function updateCustomCurve() {
+        console.log('Updating custom curve:', customCurve);
+        // Set global variable for curves.js
+        window.customCurve = customCurve;
+        valuesDisplay.textContent = `[${customCurve.map(v => v.toFixed(2)).join(', ')}]`;
+        drawCurve(curveCanvas, 'custom');
+    }
+    
+    function getHandlePosition(handleIndex) {
+        const width = curveCanvas.width;
+        const height = curveCanvas.height;
+        const padding = 20;
+        const graphWidth = width - (padding * 2);
+        const graphHeight = height - (padding * 2);
+        const graphX = padding;
+        const graphY = padding;
+        
+        if (handleIndex === 0) {
+            // P1 handle - clamp to graph bounds
+            return {
+                x: Math.max(graphX, Math.min(graphX + graphWidth, graphX + graphWidth * customCurve[0])),
+                y: Math.max(graphY, Math.min(graphY + graphHeight, graphY + graphHeight * (1 - customCurve[1])))
+            };
+        } else {
+            // P2 handle - clamp to graph bounds
+            return {
+                x: Math.max(graphX, Math.min(graphX + graphWidth, graphX + graphWidth * customCurve[2])),
+                y: Math.max(graphY, Math.min(graphY + graphHeight, graphY + graphHeight * (1 - customCurve[3])))
+            };
+        }
+    }
+    
+    function updateHandleFromPosition(handleIndex, x, y) {
+        const width = curveCanvas.width;
+        const height = curveCanvas.height;
+        const padding = 20;
+        const graphWidth = width - (padding * 2);
+        const graphHeight = height - (padding * 2);
+        const graphX = padding;
+        const graphY = padding;
+        
+        // Convert mouse position to graph coordinates and clamp to bounds
+        const graphX_pos = Math.max(0, Math.min(1, (x - graphX) / graphWidth));
+        const graphY_pos = Math.max(0, Math.min(1, (y - graphY) / graphHeight));
+        
+        if (handleIndex === 0) {
+            customCurve[0] = graphX_pos;
+            customCurve[1] = 1 - graphY_pos;
+        } else {
+            customCurve[2] = graphX_pos;
+            customCurve[3] = 1 - graphY_pos;
+        }
+        
+        updateCustomCurve();
+    }
+    
+    function getDistance(x1, y1, x2, y2) {
+        return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    }
+    
+    // Canvas mouse events for interactive editing
+    if (curveCanvas) {
+        // Make canvas cursor changeable
+        curveCanvas.style.cursor = 'crosshair';
+        
+        curveCanvas.addEventListener('mousedown', (e) => {
+            console.log('Mouse down on canvas, selectedCurve:', selectedCurve);
+            console.log('Custom curve values:', customCurve);
+            console.log('Window custom curve:', window.customCurve);
+            
+            if (selectedCurve !== 'custom') {
+                console.log('Not custom curve, ignoring mouse event');
+                return;
+            }
+            
+            canvasRect = curveCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - canvasRect.left;
+            const mouseY = e.clientY - canvasRect.top;
+            
+            console.log('Mouse position:', mouseX, mouseY);
+            console.log('Canvas size:', curveCanvas.width, 'x', curveCanvas.height);
+            
+            // Check which handle is being dragged
+            const p1 = getHandlePosition(0);
+            const p2 = getHandlePosition(1);
+            
+            console.log('Handle positions - P1:', p1, 'P2:', p2);
+            
+            const distToP1 = getDistance(mouseX, mouseY, p1.x, p1.y);
+            const distToP2 = getDistance(mouseX, mouseY, p2.x, p2.y);
+            
+            console.log('Distances - P1:', distToP1, 'P2:', distToP2);
+            
+            if (distToP1 < 12) {
+                console.log('Dragging P1 handle');
+                isDragging = true;
+                dragHandle = 0;
+                curveCanvas.style.cursor = 'grabbing';
+            } else if (distToP2 < 12) {
+                console.log('Dragging P2 handle');
+                isDragging = true;
+                dragHandle = 1;
+                curveCanvas.style.cursor = 'grabbing';
+            } else {
+                console.log('Not close enough to any handle');
+            }
+        });
+        
+        curveCanvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || !canvasRect) return;
+            
+            const mouseX = e.clientX - canvasRect.left;
+            const mouseY = e.clientY - canvasRect.top;
+            
+            console.log('Dragging handle', dragHandle, 'to position:', mouseX, mouseY);
+            updateHandleFromPosition(dragHandle, mouseX, mouseY);
+        });
+        
+        curveCanvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            dragHandle = null;
+            canvasRect = null;
+        });
+        
+        curveCanvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            dragHandle = null;
+            canvasRect = null;
+        });
+    }
+
+    // Function to create a new curve button
+    function createCurveButton(name, curveValues) {
+        const curveButtonsContainer = document.querySelector('.curve-buttons');
+        
+        // Create the button element
+        const button = document.createElement('div');
+        button.className = 'curve-item';
+        button.dataset.curve = 'saved';
+        button.dataset.curveName = name;
+        
+        // Create canvas for preview
+        const canvas = document.createElement('canvas');
+        canvas.className = 'curve-preview-small';
+        canvas.width = 50;
+        canvas.height = 30;
+        canvas.id = `${name}-preview`;
+        
+        // Create name div
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'curve-name';
+        nameDiv.textContent = name;
+        
+        // Assemble the button
+        button.appendChild(canvas);
+        button.appendChild(nameDiv);
+        
+        // Add click handler
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons
+            document.querySelectorAll('.curve-item').forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Load the saved curve
+            customCurve = [...curveValues];
+            window.customCurve = customCurve;
+            updateCustomCurve();
+            drawCurve(curveCanvas, 'custom');
+        });
+        
+        // Add to container
+        curveButtonsContainer.appendChild(button);
+        
+        // Draw the preview
+        drawSmallPreview(`${name}-preview`, 'saved', curveValues);
+    }
+    
+    // Save/Load functionality
+    const curveNameInput = document.getElementById('curveName');
+    const saveCurveButton = document.getElementById('saveCurve');
+    const loadCurveButton = document.getElementById('loadCurve');
+
+    if (saveCurveButton) {
+        saveCurveButton.addEventListener('click', () => {
+            const name = curveNameInput.value.trim();
+            if (name) {
+                savedCurves[name] = [...customCurve];
+                createCurveButton(name, customCurve);
+                status.textContent = `Saved curve: ${name}`;
+                curveNameInput.value = '';
+            } else {
+                status.textContent = 'Please enter a curve name';
+            }
+        });
+    }
+
+    if (loadCurveButton) {
+        loadCurveButton.addEventListener('click', () => {
+            const name = curveNameInput.value.trim();
+            if (name && savedCurves[name]) {
+                customCurve = [...savedCurves[name]];
+                updateCustomCurve();
+                status.textContent = `Loaded curve: ${name}`;
+            } else {
+                status.textContent = 'Curve not found';
+            }
+        });
+    }
 
     // Apply curve to keyframes
     applyButton.addEventListener('click', () => {
         status.textContent = 'Applying curve...';
-        console.log('Attempting to apply curve:', curveSelect.value);
+        console.log('Attempting to apply curve:', selectedCurve);
         
         // Get cubic-bezier values for the selected curve
-        var cubicBezier = getCubicBezierForCurve(curveSelect.value);
+        var cubicBezier;
+        if (selectedCurve === 'custom') {
+            cubicBezier = customCurve;
+        } else {
+            cubicBezier = getCubicBezierForCurve(selectedCurve);
+        }
         console.log('Cubic-bezier values:', cubicBezier);
         
         // Calculate After Effects ease values (like Flow does)
@@ -71,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('After Effects ease values:', easeData);
         
         // Pass the calculated ease data to ExtendScript (like Flow does)
-        csInterface.evalScript(`applyCurve("${curveSelect.value}", ${JSON.stringify(easeData)})`, (result) => {
+        csInterface.evalScript(`applyCurve("${selectedCurve}", ${JSON.stringify(easeData)})`, (result) => {
             console.log('Result from After Effects:', result);
             if (result === 'Error') {
                 status.textContent = 'Error: Please select keyframes in a composition.';
@@ -92,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (curveType === "easeIn") {
             return [0.55, 0.055, 0.675, 0.19]; // Slow start, then accelerates
         } else if (curveType === "easeOut") {
-            return [0.215, 0.61, 0.355, 1]; // Fast start, then decelerates
+            return [0.68, -0.55, 0.265, 1.55]; // Dramatic S-curve with sharp dip
         } else if (curveType === "easeInOut") {
             return [0.645, 0.045, 0.355, 1]; // S-curve: slow-fast-slow
         } else if (curveType === "bounce") {
@@ -168,8 +397,66 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Refresh selection
-    refreshButton.addEventListener('click', () => {
-        status.textContent = 'Selection refreshed. Select keyframes and try again.';
-    });
+    function drawSmallPreview(canvasId, curveType, customValues = null) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            status.textContent = 'Error: Canvas not found: ' + canvasId;
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Set background
+        ctx.fillStyle = '#1e1e1e';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw the exact same curve as the main canvas
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        
+        if (curveType === 'smooth') {
+            // Use the exact same cubic-bezier values as the main graph
+            ctx.moveTo(2, height - 2);
+            ctx.bezierCurveTo(
+                width * 0.25, height * (1 - 0.1),  // p1x, p1y (inverted Y)
+                width * 0.25, height * (1 - 1),    // p2x, p2y (inverted Y)
+                width - 2, 2
+            );
+        } else if (curveType === 'easeOut') {
+            // Dramatic S-curve with sharp dip
+            ctx.moveTo(2, height - 2);
+            ctx.bezierCurveTo(
+                width * 0.68, height * (1 - (-0.55)),  // p1x, p1y (inverted Y)
+                width * 0.265, height * (1 - 1.55),    // p2x, p2y (inverted Y)
+                width - 2, 2
+            );
+        } else if (curveType === 'saved' && customValues) {
+            // Draw saved curve
+            ctx.moveTo(2, height - 2);
+            ctx.bezierCurveTo(
+                width * customValues[0], height * (1 - customValues[1]),
+                width * customValues[2], height * (1 - customValues[3]),
+                width - 2, 2
+            );
+        }
+        
+        ctx.stroke();
+        
+        // Draw small dots at start and end points
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(2, height - 2, 1.5, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(width - 2, 2, 1.5, 0, 2 * Math.PI);
+        ctx.fill();
+    }
+
 });
