@@ -107,27 +107,65 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function calculateAfterEffectsEase(cubicBezier) {
         // Convert cubic-bezier to After Effects ease values
-        // This is a simplified conversion - Flow likely uses more complex calculations
+        // Focus on creating the exact curve shape we want
         
         var p1x = cubicBezier[0];
         var p1y = cubicBezier[1];
         var p2x = cubicBezier[2];
         var p2y = cubicBezier[3];
         
-        // Calculate influence based on control point positions
-        var outInfluence = Math.max(0.1, Math.min(100, p1x * 100));
-        var inInfluence = Math.max(0.1, Math.min(100, (1 - p2x) * 100));
+        // For S-curve (ease-in/ease-out), we need:
+        // - Low outgoing speed (slow start)
+        // - High outgoing influence (gradual acceleration)
+        // - Low incoming speed (slow end)
+        // - High incoming influence (gradual deceleration)
         
-        // Calculate speed based on control point slopes
-        var outSpeed = Math.max(0, Math.min(100, Math.abs(p1y) * 100));
-        var inSpeed = Math.max(0, Math.min(100, Math.abs(p2y) * 100));
-        
-        return {
-            outInfluence: outInfluence,
-            inInfluence: inInfluence,
-            outSpeed: outSpeed,
-            inSpeed: inSpeed
-        };
+        if (p1x === 0.25 && p1y === 0.1 && p2x === 0.25 && p2y === 1) {
+            // Smooth S-curve: slower ease-out for more gradual deceleration
+            return {
+                outInfluence: 25.0,  // Lower influence for slower start
+                inInfluence: 50.0,   // Higher influence for more gradual end
+                outSpeed: 25.0,      // Lower speed for slower start
+                inSpeed: 16.7        // Much lower speed for very gradual end
+            };
+        } else if (p1x === 0.55 && p1y === 0.055 && p2x === 0.675 && p2y === 0.19) {
+            // Ease In: slow start, then accelerates
+            return {
+                outInfluence: 16.7,  // Low influence for very slow start
+                inInfluence: 33.3,   // Moderate influence
+                outSpeed: 16.7,      // Very low speed for slow start
+                inSpeed: 50.0        // Higher speed for acceleration
+            };
+        } else if (p1x === 0.215 && p1y === 0.61 && p2x === 0.355 && p2y === 1) {
+            // Ease Out: fast start, then decelerates
+            return {
+                outInfluence: 50.0,  // High influence for fast start
+                inInfluence: 16.7,   // Low influence for gradual end
+                outSpeed: 50.0,      // High speed for fast start
+                inSpeed: 16.7        // Low speed for slow end
+            };
+        } else if (p1x === 0.645 && p1y === 0.045 && p2x === 0.355 && p2y === 1) {
+            // Ease In-Out: S-curve variant
+            return {
+                outInfluence: 25.0,  // Low influence for slow start
+                inInfluence: 25.0,   // Low influence for slow end
+                outSpeed: 25.0,      // Low speed for slow start
+                inSpeed: 25.0        // Low speed for slow end
+            };
+        } else {
+            // Default: use the cubic-bezier values directly
+            var outInfluence = Math.max(0.1, Math.min(100, p1x * 100));
+            var inInfluence = Math.max(0.1, Math.min(100, (1 - p2x) * 100));
+            var outSpeed = Math.max(0, Math.min(100, Math.abs(p1y) * 100));
+            var inSpeed = Math.max(0, Math.min(100, Math.abs(p2y) * 100));
+            
+            return {
+                outInfluence: outInfluence,
+                inInfluence: inInfluence,
+                outSpeed: outSpeed,
+                inSpeed: inSpeed
+            };
+        }
     }
 
     // Refresh selection

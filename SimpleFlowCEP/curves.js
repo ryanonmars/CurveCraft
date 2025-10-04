@@ -49,6 +49,15 @@ function drawCurve(canvas, curveType) {
         ctx.moveTo(0, canvas.height);
         ctx.bezierCurveTo(canvas.width * 0.1, canvas.height * 1.2, canvas.width * 0.3, canvas.height * 0.8, canvas.width * 0.5, canvas.height * 0.6);
         ctx.bezierCurveTo(canvas.width * 0.7, canvas.height * 0.4, canvas.width * 0.9, canvas.height * 0.2, canvas.width, 0);
+    } else if (curveType === 'smooth') {
+        // Use the exact same cubic-bezier values as the calculation
+        // [0.25, 0.1, 0.25, 1] - this creates the actual curve that gets applied
+        ctx.moveTo(0, canvas.height);
+        ctx.bezierCurveTo(
+            canvas.width * 0.25, canvas.height * (1 - 0.1),  // p1x, p1y (inverted Y)
+            canvas.width * 0.25, canvas.height * (1 - 1),    // p2x, p2y (inverted Y)
+            canvas.width, 0
+        );
     }
     
     ctx.stroke();
