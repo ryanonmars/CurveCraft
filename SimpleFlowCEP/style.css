@@ -48,21 +48,24 @@ h4 {
 button {
     flex: 1;
     padding: 10px;
-    background-color: #0078d4;
-    color: #fff;
-    border: none;
+    background-color: #404040;
+    color: #ffffff;
+    border: 1px solid #555;
     border-radius: 0;
     cursor: pointer;
     font-size: 12px;
     font-weight: 500;
+    transition: all 0.2s;
 }
 
 button:hover {
-    background-color: #106ebe;
+    background-color: #4a4a4a;
+    border-color: #666;
 }
 
 button:active {
-    background-color: #005a9e;
+    background-color: #333;
+    border-color: #444;
 }
 
 .library-section {
@@ -327,12 +330,14 @@ button:active {
 }
 
 .toggle-btn.active {
-    background-color: #0078d4;
+    background-color: #404040;
     color: #ffffff;
+    border: 1px solid #555;
 }
 
 .toggle-btn:hover:not(.active) {
-    background-color: #3a3a3a;
+    background-color: #2a2a2a;
+    border: 1px solid #444;
 }
 
 /* Modal Styles */
@@ -511,30 +516,38 @@ button:active {
 }
 
 .modal-button-primary {
-    background-color: #0078d4;
+    background-color: #404040;
     color: #ffffff;
+    border: 1px solid #555;
 }
 
 .modal-button-primary:hover {
-    background-color: #106ebe;
+    background-color: #4a4a4a;
+    border-color: #666;
 }
 
 .modal-button-secondary {
-    background-color: #555;
-    color: #ffffff;
+    background-color: #2a2a2a;
+    color: #cccccc;
+    border: 1px solid #444;
 }
 
 .modal-button-secondary:hover {
-    background-color: #666;
+    background-color: #333;
+    color: #ffffff;
+    border-color: #555;
 }
 
 .modal-button-error {
-    background-color: #d13438;
-    color: #ffffff;
+    background-color: #4a2a2a;
+    color: #ff6b6b;
+    border: 1px solid #6a3a3a;
 }
 
 .modal-button-error:hover {
-    background-color: #b71c1c;
+    background-color: #5a3a3a;
+    color: #ff8a8a;
+    border-color: #7a4a4a;
 }
 
 .modal-example {
