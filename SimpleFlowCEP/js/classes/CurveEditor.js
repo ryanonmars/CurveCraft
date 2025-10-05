@@ -23,6 +23,10 @@ class CurveEditor {
         this.commandStartPosition = null;
         this.commandStartLength = null;
         
+        // Alt key state
+        this.altStartPosition = null;
+        this.altStartAngle = null;
+        
         this.init();
     }
     
@@ -167,17 +171,18 @@ class CurveEditor {
         if (event) {
             const modifiers = this.getModifierKeys(event);
             
+            // Check for combined modifiers first
+            if (modifiers.control && modifiers.shift) {
+                // Move both handles symmetrically
+                this.updateSymmetricHandles(handleIndex, graphX_pos, graphY_pos);
+                return;
+            }
+            
             if (modifiers.shift) {
                 // Apply magnetic snapping to axes
                 const snapped = this.applyShiftSnapping(graphX_pos, graphY_pos);
                 graphX_pos = snapped.x;
                 graphY_pos = snapped.y;
-            }
-            
-            if (modifiers.control && modifiers.shift) {
-                // Move both handles symmetrically
-                this.updateSymmetricHandles(handleIndex, graphX_pos, graphY_pos);
-                return;
             }
             
             if (modifiers.control) {
@@ -251,6 +256,8 @@ class CurveEditor {
         this.snapToBoundary = null;
         this.commandStartPosition = null;
         this.commandStartLength = null;
+        this.altStartPosition = null;
+        this.altStartAngle = null;
         
         // Calculate original length and angle from anchor point
         const width = this.canvas.width;
@@ -351,7 +358,11 @@ class CurveEditor {
     }
     
     updateHandleWithLockedAngle(handleIndex, graphX_pos, graphY_pos) {
-        if (!this.originalHandleAngle) return;
+        // Store current position as reference if not already set
+        if (!this.altStartPosition) {
+            this.altStartPosition = { x: graphX_pos, y: graphY_pos };
+            this.altStartAngle = this.calculateCurrentHandleAngle(handleIndex);
+        }
         
         const width = this.canvas.width;
         const height = this.canvas.height;
@@ -378,23 +389,28 @@ class CurveEditor {
         const newLength = this.getDistance(anchorX, anchorY, mouseX, mouseY);
         
         // Calculate new position with locked angle
-        const newX = anchorX + newLength * Math.cos(this.originalHandleAngle);
-        const newY = anchorY + newLength * Math.sin(this.originalHandleAngle);
+        const newX = anchorX + newLength * Math.cos(this.altStartAngle);
+        const newY = anchorY + newLength * Math.sin(this.altStartAngle);
         
-        // Convert back to normalized coordinates
-        const newGraphX = Math.max(0, Math.min(1, (newX - graphX) / graphWidth));
-        const newGraphY = Math.max(0, Math.min(1, (newY - graphY) / graphHeight));
+        // Convert to normalized coordinates
+        const newGraphX = (newX - graphX) / graphWidth;
+        const newGraphY = (newY - graphY) / graphHeight;
         
-        if (handleIndex === 0) {
-            this.customCurve[0] = newGraphX;
-            this.customCurve[1] = 1 - newGraphY;
-        } else {
-            this.customCurve[2] = newGraphX;
-            this.customCurve[3] = 1 - newGraphY;
+        // Check if the position is within bounds
+        if (newGraphX >= 0 && newGraphX <= 1 && newGraphY >= 0 && newGraphY <= 1) {
+            // Only update if within bounds - this maintains locked angle
+            if (handleIndex === 0) {
+                this.customCurve[0] = newGraphX;
+                this.customCurve[1] = 1 - newGraphY;
+            } else {
+                this.customCurve[2] = newGraphX;
+                this.customCurve[3] = 1 - newGraphY;
+            }
+            
+            this.updateDisplay();
+            this.drawCurve();
         }
-        
-        this.updateDisplay();
-        this.drawCurve();
+        // If outside bounds, don't update - handle stays at last valid position
     }
     
     handleKeyDown(event) {
@@ -475,6 +491,28 @@ class CurveEditor {
         
         const handlePos = this.getHandlePosition(handleIndex);
         return this.getDistance(anchorX, anchorY, handlePos.x, handlePos.y);
+    }
+    
+    calculateCurrentHandleAngle(handleIndex) {
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const padding = 20;
+        const graphWidth = width - (padding * 2);
+        const graphHeight = height - (padding * 2);
+        const graphX = padding;
+        const graphY = padding;
+        
+        let anchorX, anchorY;
+        if (handleIndex === 0) {
+            anchorX = graphX;
+            anchorY = graphY + graphHeight;
+        } else {
+            anchorX = graphX + graphWidth;
+            anchorY = graphY;
+        }
+        
+        const handlePos = this.getHandlePosition(handleIndex);
+        return Math.atan2(handlePos.y - anchorY, handlePos.x - anchorX);
     }
     
 }
