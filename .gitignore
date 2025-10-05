@@ -20,7 +20,7 @@ yarn-error.log*
 *.swo
 
 # Build outputs
-*.zxp
+# *.zxp  # Temporarily allow ZXP for release
 dist/
 build/
 
