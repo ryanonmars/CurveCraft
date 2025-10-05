@@ -1,6 +1,6 @@
-# SimpleFlowCEP - Flow-like Easing Extension for After Effects
+# CurveCraft - Professional Curve Editor for After Effects
 
-A CEP (Common Extensibility Platform) extension that replicates the core functionality of the commercial Flow plugin, providing intuitive curve editing and easing application for After Effects keyframes.
+A CEP (Common Extensibility Platform) extension that provides professional curve editing and easing application for After Effects keyframes, inspired by Flow's intuitive interface.
 
 ## Features
 
@@ -25,14 +25,14 @@ A CEP (Common Extensibility Platform) extension that replicates the core functio
 
 3. **Restart After Effects**
 
-4. **Find the extension**: Window → Extensions → SimpleFlowCEP
+4. **Find the extension**: Window → Extensions → CurveCraft
 
 ## Usage
 
 1. **Open After Effects** and create a composition
 2. **Add keyframes** to any property (Position, Scale, Rotation, Opacity, etc.)
 3. **Select the layer** or specific properties
-4. **Open SimpleFlowCEP**: Window → Extensions → SimpleFlowCEP
+4. **Open CurveCraft**: Window → Extensions → CurveCraft
 5. **Choose a curve** from the dropdown
 6. **Click "Apply Curve"** to apply the easing
 
@@ -56,7 +56,7 @@ The extension uses After Effects' native `setTemporalEaseAtKey()` function to cr
 
 ### File Structure
 ```
-SimpleFlowCEP/
+CurveCraft/
 ├── CSXS/
 │   └── manifest.xml          # CEP manifest
 ├── client/

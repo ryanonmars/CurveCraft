@@ -227,10 +227,18 @@ class UI {
                 const deleteX = document.createElement('button');
                 deleteX.className = 'delete-x';
                 deleteX.innerHTML = '×';
-                deleteX.addEventListener('click', (e) => {
+                deleteX.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const curveName = item.dataset.curveName;
-                    if (confirm(`Delete curve "${curveName}"?`)) {
+                    
+                    // Show confirmation modal instead of browser confirm
+                    const confirmed = await this.showConfirmationModal(
+                        'Delete Curve', 
+                        `Are you sure you want to delete "${curveName}"?`,
+                        'This action cannot be undone.'
+                    );
+                    
+                    if (confirmed) {
                         this.curveLibrary.deleteUserCurve(curveName);
                         item.remove();
                         
@@ -247,6 +255,9 @@ class UI {
                                 remainingDeleteX.remove();
                             }
                         });
+                        
+                        // Show success notification
+                        await this.showNotificationModal('Success', `Curve "${curveName}" deleted successfully!`);
                     }
                 });
                 item.appendChild(deleteX);
@@ -558,6 +569,73 @@ class UI {
             
             // Focus the button
             confirmBtn.focus();
+        });
+    }
+    
+    // Show confirmation modal with Yes/No buttons
+    showConfirmationModal(title, message, warning = '') {
+        return new Promise((resolve) => {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <h3 class="modal-title">${title}</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin: 0 0 10px 0; color: #ffffff;">${message}</p>
+                    ${warning ? `<p style="margin: 0; color: #ff6b6b; font-size: 12px;">${warning}</p>` : ''}
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button modal-button-secondary" id="cancelConfirm">Cancel</button>
+                    <button class="modal-button modal-button-error" id="confirmDelete">Delete</button>
+                </div>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Event handlers
+            const cleanup = () => {
+                document.body.removeChild(overlay);
+            };
+            
+            const cancelBtn = modal.querySelector('#cancelConfirm');
+            const confirmBtn = modal.querySelector('#confirmDelete');
+            
+            cancelBtn.addEventListener('click', () => {
+                cleanup();
+                resolve(false);
+            });
+            
+            confirmBtn.addEventListener('click', () => {
+                cleanup();
+                resolve(true);
+            });
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    cleanup();
+                    resolve(false);
+                }
+            });
+            
+            // Keyboard handlers
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    cleanup();
+                    resolve(false);
+                }
+            });
+            
+            // Focus the cancel button
+            cancelBtn.focus();
         });
     }
 }

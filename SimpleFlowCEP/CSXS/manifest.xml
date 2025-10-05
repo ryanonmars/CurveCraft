@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<ExtensionManifest Version="7.0" ExtensionBundleId="com.example.simpleflowcep" ExtensionBundleVersion="1.0.0" ExtensionBundleName="SimpleFlowCEP" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.curvecraft.extension" ExtensionBundleVersion="1.0.0" ExtensionBundleName="CurveCraft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
-    <Extension Id="com.example.simpleflowcep" Version="1.0.0"/>
+    <Extension Id="com.curvecraft.extension" Version="1.0.0"/>
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -15,7 +15,7 @@
     </RequiredRuntimeList>
   </ExecutionEnvironment>
   <DispatchInfoList>
-    <Extension Id="com.example.simpleflowcep">
+    <Extension Id="com.curvecraft.extension">
       <DispatchInfo>
         <Resources>
           <MainPath>./index.html</MainPath>
@@ -26,7 +26,7 @@
         </Lifecycle>
         <UI>
           <Type>Panel</Type>
-          <Menu>SimpleFlowCEP</Menu>
+          <Menu>CurveCraft</Menu>
           <Geometry>
             <Size>
               <Height>400</Height>
