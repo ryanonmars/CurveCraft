@@ -208,8 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Apply curve using AfterEffects class
-            const result = await afterEffects.applyCurveToKeyframes(selectedCurve, cubicBezier);
-            console.log('Curve applied:', result);
+            await afterEffects.applyCurveToKeyframes(selectedCurve, cubicBezier);
         } catch (error) {
             console.error('Failed to apply curve:', error.message);
             alert('Failed to apply curve: ' + error.message);

@@ -9,10 +9,6 @@ class CurveEditor {
         this.dragHandle = null;
         this.canvasRect = null;
         
-        // Handle manipulation state
-        this.originalHandlePosition = null;
-        this.originalHandleLength = null;
-        this.originalHandleAngle = null;
         
         // Shift snapping state
         this.snapToAxis = null; // 'x', 'y', or null
@@ -42,8 +38,6 @@ class CurveEditor {
         this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
-        // Remove mouseleave handler to allow dragging outside canvas
-        // this.canvas.addEventListener('mouseleave', () => this.handleMouseLeave());
         
         // Add keyboard event listeners for modifier keys
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
@@ -104,12 +98,6 @@ class CurveEditor {
         this.canvas.style.cursor = 'crosshair';
     }
     
-    handleMouseLeave() {
-        this.isDragging = false;
-        this.dragHandle = null;
-        this.canvasRect = null;
-        this.canvas.style.cursor = 'crosshair';
-    }
     
     handleGlobalMouseMove(e) {
         if (!this.isDragging || !this.canvasRect) return;
@@ -248,9 +236,6 @@ class CurveEditor {
     }
     
     storeOriginalHandleState(handleIndex) {
-        const pos = this.getHandlePosition(handleIndex);
-        this.originalHandlePosition = { x: pos.x, y: pos.y };
-        
         // Reset snap state for new drag
         this.snapToAxis = null;
         this.snapToBoundary = null;
@@ -258,29 +243,6 @@ class CurveEditor {
         this.commandStartLength = null;
         this.altStartPosition = null;
         this.altStartAngle = null;
-        
-        // Calculate original length and angle from anchor point
-        const width = this.canvas.width;
-        const height = this.canvas.height;
-        const padding = 20;
-        const graphWidth = width - (padding * 2);
-        const graphHeight = height - (padding * 2);
-        const graphX = padding;
-        const graphY = padding;
-        
-        if (handleIndex === 0) {
-            // P1 anchor is bottom-left
-            const anchorX = graphX;
-            const anchorY = graphY + graphHeight;
-            this.originalHandleLength = this.getDistance(anchorX, anchorY, pos.x, pos.y);
-            this.originalHandleAngle = Math.atan2(pos.y - anchorY, pos.x - anchorX);
-        } else {
-            // P2 anchor is top-right
-            const anchorX = graphX + graphWidth;
-            const anchorY = graphY;
-            this.originalHandleLength = this.getDistance(anchorX, anchorY, pos.x, pos.y);
-            this.originalHandleAngle = Math.atan2(pos.y - anchorY, pos.x - anchorX);
-        }
     }
     
     updateSymmetricHandles(handleIndex, graphX_pos, graphY_pos) {
@@ -414,13 +376,11 @@ class CurveEditor {
     }
     
     handleKeyDown(event) {
-        // Store modifier state for real-time updates
-        this.currentModifiers = this.getModifierKeys(event);
+        // Modifier keys are handled in real-time during mouse movement
     }
     
     handleKeyUp(event) {
-        // Update modifier state
-        this.currentModifiers = this.getModifierKeys(event);
+        // Modifier keys are handled in real-time during mouse movement
     }
     
     applyShiftSnapping(x, y) {
@@ -461,15 +421,6 @@ class CurveEditor {
         }
     }
     
-    getSnapXValue(x) {
-        // Snap to nearest 0.1 increment on X axis
-        return Math.round(x * 10) / 10;
-    }
-    
-    getSnapYValue(y) {
-        // Snap to nearest 0.1 increment on Y axis
-        return Math.round(y * 10) / 10;
-    }
     
     calculateCurrentHandleLength(handleIndex) {
         const width = this.canvas.width;
