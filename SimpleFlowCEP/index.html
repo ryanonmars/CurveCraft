@@ -10,17 +10,18 @@
 </head>
 <body>
     <div class="container">
-        <h3>SimpleFlowCEP</h3>
         
               <!-- Curve Preview Area -->
               <div class="preview-section">
-                  <canvas id="curveCanvas" width="280" height="200"></canvas>
+                  <canvas id="curveCanvas" width="400" height="280"></canvas>
               <div class="values-display">
-                  <span id="valuesDisplay">[0.25, 0.1, 0.25, 1]</span>
-                  <button id="copyValues">Copy</button>
-              </div>
-              <div class="instructions">
-                  <small>Drag the handles to adjust the curve</small>
+                  <button id="importButton">
+                      <img src="assets/icons/Import.svg" alt="Import" style="width: 16px; height: 16px; filter: brightness(0) invert(1);">
+                  </button>
+                  <div class="values-left">
+                      <span id="valuesDisplay" class="clickable-values">[0.25, 0.1, 0.25, 1]</span>
+                  </div>
+                  <button id="starButton">★</button>
               </div>
               </div>
         
@@ -29,8 +30,16 @@
             <button id="applyButton">Apply Curve</button>
         </div>
         
-        <!-- Custom Editor Section -->
-        <div class="custom-section">
+        <!-- Curve Library Toggle -->
+        <div class="library-toggle">
+            <div class="toggle-container">
+                <button class="toggle-btn active" data-mode="defaults">Default Curves</button>
+                <button class="toggle-btn" data-mode="user">User Curves</button>
+            </div>
+        </div>
+        
+        <!-- Custom Editor Section (Hidden) -->
+        <div class="custom-section" style="display: none;">
             <h4>Custom Curve Editor</h4>
             <div class="custom-controls">
                 <div class="curve-item active" data-curve="custom">
@@ -39,8 +48,8 @@
                 </div>
             </div>
             
-            <!-- Save/Load Controls -->
-            <div class="save-controls">
+            <!-- Save/Load Controls (Hidden) -->
+            <div class="save-controls" style="display: none;">
                 <input type="text" id="curveName" placeholder="Curve name" maxlength="20">
                 <button id="saveCurve">Save</button>
             </div>
@@ -48,13 +57,17 @@
         
         <!-- Default Curves Library -->
         <div class="library-section">
-            <h4>Default Curves</h4>
             <div class="curve-buttons" id="savedCurves">
                 <div class="no-curves">No default curves yet</div>
             </div>
         </div>
         
-        <div class="status" id="status">Select keyframes and apply a curve</div>
     </div>
+
+    <!-- Edit Controls (only for user curves) - at very bottom -->
+    <div class="edit-controls" id="editControls" style="display: none;">
+        <span class="edit-button" id="editButton">Edit</span>
+    </div>
+
 </body>
 </html>
