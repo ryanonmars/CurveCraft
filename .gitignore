@@ -42,6 +42,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+create_zxp.py
 
 # CEP Extensions (if testing locally)
 CEP/extensions/
