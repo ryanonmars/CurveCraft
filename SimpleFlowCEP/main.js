@@ -4,8 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('status').textContent = 'Error: CSInterface not loaded. Extension may not work properly.';
         return;
     }
-    
-    const csInterface = new CSInterface();
     const curveCanvas = document.getElementById('curveCanvas');
     const applyButton = document.getElementById('applyButton');
     const curveButtons = document.querySelectorAll('.curve-item');
@@ -16,9 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Current custom curve values
     let selectedCurve = 'custom';
     
-    // Initialize curve editor and library
+    // Initialize curve editor, library, and After Effects communication
     const curveEditor = new CurveEditor(curveCanvas, valuesDisplay);
     const curveLibrary = new CurveLibrary();
+    const afterEffects = new AfterEffects();
 
 
 
@@ -570,33 +569,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Apply curve to keyframes
-    applyButton.addEventListener('click', () => {
-        
-        // Get cubic-bezier values for the selected curve
-        var cubicBezier;
-        if (selectedCurve === 'custom') {
-            cubicBezier = curveEditor.getCurve();
-        } else {
-            // Get from library
-            cubicBezier = curveLibrary.getCurve(selectedCurve, curveLibrary.getMode() === 'user') || [0.25, 0.1, 0.25, 1];
-        }
-        
-        // Calculate After Effects ease values
-        var easeData = {
-            outInfluence: Math.max(0.1, Math.min(100, cubicBezier[0] * 100)),
-            inInfluence: Math.max(0.1, Math.min(100, (1 - cubicBezier[2]) * 100)),
-            outSpeed: Math.max(0, Math.min(100, Math.abs(cubicBezier[1]) * 100)),
-            inSpeed: Math.max(0, Math.min(100, Math.abs(cubicBezier[3]) * 100))
-        };
-        
-        // Pass the calculated ease data to ExtendScript
-        csInterface.evalScript(`applyCurve("${selectedCurve}", ${JSON.stringify(easeData)})`, (result) => {
-            if (result === 'Error') {
-            } else if (result === 'Success') {
-            } else if (result === null || result === undefined) {
+    applyButton.addEventListener('click', async () => {
+        try {
+            // Get cubic-bezier values for the selected curve
+            let cubicBezier;
+            if (selectedCurve === 'custom') {
+                cubicBezier = curveEditor.getCurve();
             } else {
+                // Get from library
+                cubicBezier = curveLibrary.getCurve(selectedCurve, curveLibrary.getMode() === 'user') || [0.25, 0.1, 0.25, 1];
             }
-        });
+            
+            // Apply curve using AfterEffects class
+            const result = await afterEffects.applyCurveToKeyframes(selectedCurve, cubicBezier);
+            console.log('Curve applied:', result);
+        } catch (error) {
+            console.error('Failed to apply curve:', error.message);
+            alert('Failed to apply curve: ' + error.message);
+        }
     });
 
     
