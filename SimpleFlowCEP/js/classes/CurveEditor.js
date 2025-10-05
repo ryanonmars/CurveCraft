@@ -128,16 +128,16 @@ class CurveEditor {
         const graphY = padding;
         
         if (handleIndex === 0) {
-            // P1 handle - clamp to graph bounds
+            // P1 handle - only clamp X, allow Y outside bounds
             return {
                 x: Math.max(graphX, Math.min(graphX + graphWidth, graphX + graphWidth * this.customCurve[0])),
-                y: Math.max(graphY, Math.min(graphY + graphHeight, graphY + graphHeight * (1 - this.customCurve[1])))
+                y: graphY + graphHeight * (1 - this.customCurve[1])
             };
         } else {
-            // P2 handle - clamp to graph bounds
+            // P2 handle - only clamp X, allow Y outside bounds
             return {
                 x: Math.max(graphX, Math.min(graphX + graphWidth, graphX + graphWidth * this.customCurve[2])),
-                y: Math.max(graphY, Math.min(graphY + graphHeight, graphY + graphHeight * (1 - this.customCurve[3])))
+                y: graphY + graphHeight * (1 - this.customCurve[3])
             };
         }
     }
@@ -302,9 +302,8 @@ class CurveEditor {
         const newGraphX = (newX - graphX) / graphWidth;
         const newGraphY = (newY - graphY) / graphHeight;
         
-        // Check if the position is within bounds
-        if (newGraphX >= 0 && newGraphX <= 1 && newGraphY >= 0 && newGraphY <= 1) {
-            // Only update if within bounds - this maintains locked length
+        // Only clamp X to 0-1, allow Y outside bounds for overshoot
+        if (newGraphX >= 0 && newGraphX <= 1) {
             if (handleIndex === 0) {
                 this.customCurve[0] = newGraphX;
                 this.customCurve[1] = 1 - newGraphY;
@@ -316,7 +315,6 @@ class CurveEditor {
             this.updateDisplay();
             this.drawCurve();
         }
-        // If outside bounds, don't update - handle stays at last valid position
     }
     
     updateHandleWithLockedAngle(handleIndex, graphX_pos, graphY_pos) {
@@ -358,9 +356,8 @@ class CurveEditor {
         const newGraphX = (newX - graphX) / graphWidth;
         const newGraphY = (newY - graphY) / graphHeight;
         
-        // Check if the position is within bounds
-        if (newGraphX >= 0 && newGraphX <= 1 && newGraphY >= 0 && newGraphY <= 1) {
-            // Only update if within bounds - this maintains locked angle
+        // Only clamp X to 0-1, allow Y outside bounds for overshoot
+        if (newGraphX >= 0 && newGraphX <= 1) {
             if (handleIndex === 0) {
                 this.customCurve[0] = newGraphX;
                 this.customCurve[1] = 1 - newGraphY;
@@ -372,7 +369,6 @@ class CurveEditor {
             this.updateDisplay();
             this.drawCurve();
         }
-        // If outside bounds, don't update - handle stays at last valid position
     }
     
     handleKeyDown(event) {
