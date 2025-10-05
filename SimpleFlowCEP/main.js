@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.clearRect(0, 0, width, height);
         
         // Add padding around the graph area
-        const padding = 24;
+        const padding = 8;
         const graphWidth = width - (padding * 2);
         const graphHeight = height - (padding * 2);
         const graphX = padding;
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Draw curve
         ctx.strokeStyle = '#0078d4';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 4;
         ctx.beginPath();
         
         if (curveType === 'custom') {
@@ -141,11 +141,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Draw small dots at start and end points
         ctx.fillStyle = '#0078d4';
         ctx.beginPath();
-        ctx.arc(graphX, graphY + graphHeight, 2, 0, 2 * Math.PI);
+        ctx.arc(graphX, graphY + graphHeight, 3, 0, 2 * Math.PI);
         ctx.fill();
         
         ctx.beginPath();
-        ctx.arc(graphX + graphWidth, graphY, 2, 0, 2 * Math.PI);
+        ctx.arc(graphX + graphWidth, graphY, 3, 0, 2 * Math.PI);
         ctx.fill();
         
         // Draw yellow handles for default curves
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Draw handle lines
             ctx.strokeStyle = '#ffa500';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(graphX, graphY + graphHeight);
             ctx.lineTo(p1x, p1y);
@@ -170,12 +170,12 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.arc(p1x, p1y, 2, 0, 2 * Math.PI);
+            ctx.arc(p1x, p1y, 3, 0, 2 * Math.PI);
             ctx.fill();
             ctx.stroke();
             
             ctx.beginPath();
-            ctx.arc(p2x, p2y, 2, 0, 2 * Math.PI);
+            ctx.arc(p2x, p2y, 3, 0, 2 * Math.PI);
             ctx.fill();
             ctx.stroke();
         }
@@ -552,7 +552,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Star button functionality
     if (starButton) {
         starButton.addEventListener('click', () => {
-            // Star button functionality will be implemented
+            const curveName = prompt('Enter a name for this curve:');
+            if (curveName && curveName.trim()) {
+                // Check if name already exists
+                const saved = localStorage.getItem('simpleFlowCurves') || '{}';
+                const userCurves = JSON.parse(saved);
+                
+                if (userCurves[curveName.trim()]) {
+                    alert(`A curve named "${curveName.trim()}" already exists. Please choose a different name.`);
+                } else {
+                    // Save to localStorage
+                    userCurves[curveName.trim()] = [...customCurve];
+                    localStorage.setItem('simpleFlowCurves', JSON.stringify(userCurves));
+                    
+                    // Create the button if we're in user curves mode
+                    if (currentMode === 'user') {
+                        createCurveButton(curveName.trim(), customCurve);
+                    }
+                    
+                    alert(`Curve "${curveName.trim()}" saved successfully!`);
+                }
+            } else if (curveName !== null) {
+                alert('Please enter a curve name');
+            }
         });
     }
 
@@ -598,6 +620,28 @@ document.addEventListener('DOMContentLoaded', function() {
                                 drawCurve(curveCanvas, 'custom');
                                 selectedCurve = 'custom';
                                 cleanup();
+                                
+                                // Prompt to save the imported curve
+                                const curveName = prompt('Enter a name for this curve (or leave blank to skip saving):');
+                                if (curveName && curveName.trim()) {
+                                    const saved = localStorage.getItem('simpleFlowCurves') || '{}';
+                                    const userCurves = JSON.parse(saved);
+                                    
+                                    if (userCurves[curveName.trim()]) {
+                                        alert(`A curve named "${curveName.trim()}" already exists. Please choose a different name.`);
+                                    } else {
+                                        // Save to localStorage
+                                        userCurves[curveName.trim()] = [...customCurve];
+                                        localStorage.setItem('simpleFlowCurves', JSON.stringify(userCurves));
+                                        
+                                        // Create the button if we're in user curves mode
+                                        if (currentMode === 'user') {
+                                            createCurveButton(curveName.trim(), customCurve);
+                                        }
+                                        
+                                        alert(`Curve "${curveName.trim()}" saved successfully!`);
+                                    }
+                                }
                             } else {
                                 console.log('Invalid curve values. All values must be numbers between 0 and 1.');
                             }
