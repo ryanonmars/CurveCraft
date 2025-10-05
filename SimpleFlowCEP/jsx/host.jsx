@@ -90,52 +90,61 @@ function applyCurveToKeyframes(prop, curveType, easeData) {
         actualDims = 1;
     }
 
-    // Use the calculated ease values from the frontend (like Flow does)
+    // Use the calculated ease values from the frontend
     var outInfluence = easeData.outInfluence;
     var inInfluence = easeData.inInfluence;
     var outSpeed = easeData.outSpeed;
     var inSpeed = easeData.inSpeed;
 
-    // Create ease objects for each dimension
-    var inEaseArray = [];
-    var outEaseArray = [];
-
-    // All dimensions share the same temporal curve.
-    for (var d = 0; d < actualDims; d++) {
-        inEaseArray.push(new KeyframeEase(inSpeed, inInfluence));
-        outEaseArray.push(new KeyframeEase(outSpeed, outInfluence));
-    }
-
-    // Apply curve to all keyframes
-    for (var k = 1; k <= prop.numKeys; k++) {
+    // Apply curve to keyframe segments with distance-based speed scaling
+    for (var k = 1; k < prop.numKeys; k++) {
         try {
-            // Apply temporal ease to both incoming and outgoing tangents
-            prop.setTemporalEaseAtKey(k, inEaseArray, outEaseArray);
-
-            // Special handling for the last keyframe
-            if (k === prop.numKeys && k > 1) {
-                // Adjust incoming ease for the final keyframe
-                prop.setTemporalEaseAtKey(k, inEaseArray, prop.keyOutTemporalEase(k));
+            var t1 = prop.keyTime(k);
+            var t2 = prop.keyTime(k + 1);
+            var timeDiff = t2 - t1;
+            
+            var v1 = prop.keyValue(k);
+            var v2 = prop.keyValue(k + 1);
+            
+            // Calculate value difference for this segment
+            var valueDiff = 0;
+            if (typeof v1 === 'number') {
+                valueDiff = Math.abs(v2 - v1);
+            } else if (v1.length) {
+                var sum = 0;
+                for (var d = 0; d < v1.length; d++) {
+                    sum += Math.pow(v2[d] - v1[d], 2);
+                }
+                valueDiff = Math.sqrt(sum);
             }
             
-            // Special handling for the first keyframe
-            if (k === 1 && prop.numKeys > 1) {
-                // Adjust outgoing ease for the first keyframe
-                prop.setTemporalEaseAtKey(k, prop.keyInTemporalEase(k), outEaseArray);
+            var outEaseArray = [];
+            var inEaseArray = [];
+            for (var d = 0; d < actualDims; d++) {
+                outEaseArray.push(new KeyframeEase(outSpeed, outInfluence));
+                inEaseArray.push(new KeyframeEase(inSpeed, inInfluence));
             }
+            
+            // Set BOTH incoming and outgoing ease on first keyframe
+            // Use outgoing ease for both to create smooth start
+            prop.setTemporalEaseAtKey(k, outEaseArray, outEaseArray);
+            
+            // Set BOTH incoming and outgoing ease on second keyframe
+            // Use incoming ease for both to create smooth end
+            prop.setTemporalEaseAtKey(k + 1, inEaseArray, inEaseArray);
+            
         } catch (e) {
-            // Handle exceptions for properties that don't support temporal ease
-            return 'Error applying temporal ease at key ' + k + ': ' + e.toString();
+            return 'Error at segment ' + k + ': ' + e.toString();
         }
     }
     
-    // For spatial properties, ensure auto-bezier is set to let After Effects handle the path
+    // For spatial properties, set to linear to avoid auto-bezier interference
     if (prop.propertyValueType === PropertyValueType.ThreeD_SPATIAL || 
         prop.propertyValueType === PropertyValueType.TwoD_SPATIAL) {
         for (var k = 1; k <= prop.numKeys; k++) {
             try {
-                prop.setSpatialContinuousAtKey(k, true);
-                prop.setSpatialAutoBezierAtKey(k, true);
+                prop.setSpatialContinuousAtKey(k, false);
+                prop.setSpatialAutoBezierAtKey(k, false);
             } catch (e) {
                 // Ignore if spatial properties are not supported or behave differently
             }

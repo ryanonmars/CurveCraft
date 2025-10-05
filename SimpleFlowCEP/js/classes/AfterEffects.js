@@ -45,8 +45,9 @@ class AfterEffects {
         return {
             outInfluence: Math.max(0.1, Math.min(100, cubicBezier[0] * 100)),
             inInfluence: Math.max(0.1, Math.min(100, (1 - cubicBezier[2]) * 100)),
-            outSpeed: Math.max(0, Math.min(100, Math.abs(cubicBezier[1]) * 100)),
-            inSpeed: Math.max(0, Math.min(100, Math.abs(cubicBezier[3]) * 100))
+            // Swap speeds: high Y value means LOW speed (slow ease)
+            outSpeed: Math.max(0.1, Math.min(100, (1 - Math.abs(cubicBezier[1])) * 100)),
+            inSpeed: Math.max(0.1, Math.min(100, (1 - Math.abs(cubicBezier[3])) * 100))
         };
     }
     
