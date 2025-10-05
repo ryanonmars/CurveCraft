@@ -8,55 +8,44 @@ function applyCurve(curveType, easeData) {
 
         app.beginUndoGroup("Apply Curve");
         var appliedCount = 0;
-        var debugInfo = 'Curve: ' + curveType + ', Layers: ' + selectedLayers.length + ', ';
-        
         for (var i = 0; i < selectedLayers.length; i++) {
             var layer = selectedLayers[i];
             
             // Check selected properties first
             var targets = [];
             if (layer.selectedProperties && layer.selectedProperties.length > 0) {
-                debugInfo += 'SelProps: ' + layer.selectedProperties.length + ', ';
                 for (var si = 0; si < layer.selectedProperties.length; si++) {
                     var p = layer.selectedProperties[si];
                     if (p.propertyType === PropertyType.PROPERTY && p.numKeys && p.numKeys >= 2) {
                         targets.push(p);
-                        debugInfo += 'Added ' + p.name + ', ';
                     }
                 }
             }
             
             // If no selected properties, try common properties
             if (targets.length === 0) {
-                debugInfo += 'NoSelProps, Trying common... ';
                 var common = ["Position", "Scale", "Rotation", "Opacity", "Anchor Point"];
                 for (var ci = 0; ci < common.length; ci++) {
                     try {
                         var cp = layer.property("ADBE Transform Group").property("ADBE " + common[ci]);
                         if (cp && cp.propertyType === PropertyType.PROPERTY && cp.numKeys && cp.numKeys >= 2) {
                             targets.push(cp);
-                            debugInfo += 'Added ' + common[ci] + ' (' + cp.numKeys + ' keys), ';
                         }
                     } catch (err) {
-                        debugInfo += common[ci] + ' failed, ';
+                        // Ignore errors
                     }
                 }
             }
             
-            debugInfo += 'Targets: ' + targets.length + ', ';
-            
             for (var ti = 0; ti < targets.length; ti++) {
                 var prop = targets[ti];
-                var result = applyCurveToKeyframes(prop, curveType, easeData);
-                if (result) {
-                    debugInfo += result + ', ';
-                }
+                applyCurveToKeyframes(prop, curveType, easeData);
                 appliedCount++;
             }
         }
         
         app.endUndoGroup();
-        return 'Success: Applied to ' + appliedCount + ' properties. ' + debugInfo;
+        return 'Success: Applied to ' + appliedCount + ' properties';
     } catch (e) {
         return 'Error: ' + e.toString() + ' at line ' + e.line;
     }
@@ -168,67 +157,50 @@ function detectCurveFromKeyframes() {
         
         var layer = selectedLayers[0];
         var property = null;
-        var debugInfo = [];
-        
-        debugInfo.push('Layer: ' + layer.name);
         
         if (layer.selectedProperties && layer.selectedProperties.length > 0) {
-            debugInfo.push('Found ' + layer.selectedProperties.length + ' selected properties');
             for (var si = 0; si < layer.selectedProperties.length; si++) {
                 var p = layer.selectedProperties[si];
-                if (p.propertyType === PropertyType.PROPERTY) {
-                    debugInfo.push('Property: ' + p.name + ', Keys: ' + (p.numKeys || 0));
-                    if (p.numKeys && p.numKeys >= 2) {
-                        property = p;
-                        debugInfo.push('Using selected property: ' + p.name);
-                        break;
-                    }
+                if (p.propertyType === PropertyType.PROPERTY && p.numKeys >= 2) {
+                    property = p;
+                    break;
                 }
             }
         }
         
         if (!property) {
-            debugInfo.push('No selected properties, trying Transform group');
             try {
                 var transform = layer.property("ADBE Transform Group");
                 if (transform) {
                     var positionProp = transform.property("ADBE Position");
                     if (positionProp && positionProp.numKeys >= 2) {
                         property = positionProp;
-                        debugInfo.push('Using Position from transform');
                     }
                 }
             } catch (e) {
-                debugInfo.push('Transform error: ' + e.toString());
+                // Ignore errors
             }
         }
         
         if (!property) {
-            return JSON.stringify({success: false, message: 'No properties with 2+ keyframes found', debug: debugInfo.join(', ')});
+            return JSON.stringify({success: false, message: 'No properties with 2+ keyframes found'});
         }
         
-        var numKeys = property.numKeys;
-        debugInfo.push('Property: ' + property.name + ' has ' + numKeys + ' keyframes');
-        
-        if (numKeys < 2) {
-            return JSON.stringify({success: false, message: 'Need at least 2 keyframes', debug: debugInfo.join(', ')});
+        if (property.numKeys < 2) {
+            return JSON.stringify({success: false, message: 'Need at least 2 keyframes'});
         }
         
         var inEase = property.keyInTemporalEase(1);
         var outEase = property.keyOutTemporalEase(1);
         
-        debugInfo.push('InEase length: ' + inEase.length + ', OutEase length: ' + outEase.length);
-        
         if (inEase.length === 0 || outEase.length === 0) {
-            return JSON.stringify({success: false, message: 'No easing data found on keyframes', debug: debugInfo.join(', ')});
+            return JSON.stringify({success: false, message: 'No easing data found on keyframes'});
         }
         
         var inSpeed = inEase[0].speed;
         var inInfluence = inEase[0].influence;
         var outSpeed = outEase[0].speed;
         var outInfluence = outEase[0].influence;
-        
-        debugInfo.push('Raw values - Out: ' + outSpeed + '/' + outInfluence + ', In: ' + inSpeed + '/' + inInfluence);
         
         var curveValues = [
             outSpeed / 100,
@@ -240,12 +212,11 @@ function detectCurveFromKeyframes() {
         return JSON.stringify({
             success: true,
             curveValues: curveValues,
-            message: 'Curve detected from keyframes',
-            debug: debugInfo.join(', ')
+            message: 'Curve detected from keyframes'
         });
         
     } catch (error) {
-        return JSON.stringify({success: false, message: 'Error: ' + error.toString() + ' at line ' + error.line});
+        return JSON.stringify({success: false, message: 'Error: ' + error.toString()});
     }
 }
 

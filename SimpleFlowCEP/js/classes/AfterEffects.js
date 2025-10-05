@@ -56,36 +56,6 @@ class AfterEffects {
         return this.applyCurve(curveType, easeData);
     }
     
-    // Get current selection info (for debugging)
-    getSelectionInfo() {
-        return new Promise((resolve, reject) => {
-            const script = `
-                try {
-                    var comp = app.project.activeItem;
-                    if (!comp || !(comp instanceof CompItem)) {
-                        "No active composition";
-                    } else {
-                        var layers = comp.selectedLayers;
-                        if (layers.length === 0) {
-                            "No layers selected";
-                        } else {
-                            "Selected: " + layers.length + " layer(s)";
-                        }
-                    }
-                } catch (error) {
-                    "Error: " + error.toString();
-                }
-            `;
-            
-            this.csInterface.evalScript(script, (result) => {
-                if (result === 'EvalScript error.') {
-                    reject(new Error('Failed to get selection info'));
-                } else {
-                    resolve(result);
-                }
-            });
-        });
-    }
     
     // Detect curve from selected keyframes
     detectCurveFromKeyframes() {

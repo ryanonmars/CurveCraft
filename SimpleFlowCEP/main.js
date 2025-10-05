@@ -143,17 +143,15 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const result = await afterEffects.detectCurveFromKeyframes();
                 
-                const debugInfo = result.debug ? `<br><br><small>Debug: ${result.debug}</small>` : '';
-                
                 if (result.success) {
                     curveEditor.setCurve(result.curveValues);
                     drawCurve(curveCanvas, 'custom');
                     
                     await ui.showNotificationModal('Curve Detected!', 
-                        `Detected curve from keyframes:<br><code style="background: #2a2a2a; padding: 2px 4px; border-radius: 2px; font-family: monospace;">[${result.curveValues.map(v => v.toFixed(3)).join(', ')}]</code>${debugInfo}`
+                        `Detected curve from keyframes:<br><code style="background: #2a2a2a; padding: 2px 4px; border-radius: 2px; font-family: monospace;">[${result.curveValues.map(v => v.toFixed(3)).join(', ')}]</code>`
                     );
                 } else {
-                    await ui.showNotificationModal('Error', result.message + debugInfo, 'error');
+                    await ui.showNotificationModal('Error', result.message, 'error');
                 }
             } catch (error) {
                 await ui.showNotificationModal('Error', 'Failed to detect curve: ' + error.message, 'error');
