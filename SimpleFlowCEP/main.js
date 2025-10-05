@@ -15,18 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Current custom curve values
     let selectedCurve = 'custom';
-    let currentMode = 'defaults';
     
-    // Default curves that are always available
-    const defaultCurves = {
-        'Ease Out': [0.344, 0.053, 0.002, 1.000],
-        'Ease In': [0.927, 0.000, 0.852, 0.953],
-        'Ease In-Out': [0.694, 0.000, 0.306, 1.000],
-        'Smooth Linear': [0.285, 0.000, 0.648, 1.000]
-    };
-    
-    // Initialize curve editor
+    // Initialize curve editor and library
     const curveEditor = new CurveEditor(curveCanvas, valuesDisplay);
+    const curveLibrary = new CurveLibrary();
 
 
 
@@ -41,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Load default curves
+        const defaultCurves = curveLibrary.getAllDefaultCurves();
         Object.keys(defaultCurves).forEach(name => {
             createCurveButton(name, defaultCurves[name]);
         });
@@ -48,11 +41,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Toggle between defaults and user curves
     function switchMode(mode) {
-        currentMode = mode;
+        curveLibrary.setMode(mode);
         const savedCurvesContainer = document.getElementById('savedCurves');
         
         // Reset edit mode when switching tabs
-        isEditMode = false;
+        curveLibrary.setEditMode(false);
         if (editButton) {
             editButton.textContent = 'Edit';
         }
@@ -64,10 +57,9 @@ document.addEventListener('DOMContentLoaded', function() {
             loadDefaultCurves();
             editControls.style.display = 'none';
         } else {
-            // Load user curves from localStorage
-            const saved = localStorage.getItem('simpleFlowCurves');
-            if (saved) {
-                const userCurves = JSON.parse(saved);
+            // Load user curves
+            const userCurves = curveLibrary.getAllUserCurves();
+            if (Object.keys(userCurves).length > 0) {
                 Object.keys(userCurves).forEach(name => {
                     createCurveButton(name, userCurves[name]);
                 });
@@ -286,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Keep current custom curve
             } else {
                 // Load curve values into curveEditor for editing
-                const curveValues = defaultCurves[selectedCurve] || [0.25, 0.1, 0.25, 1];
+                const curveValues = curveLibrary.getCurve(selectedCurve, curveLibrary.getMode() === 'user') || [0.25, 0.1, 0.25, 1];
                 curveEditor.setCurve(curveValues);
             }
             
@@ -359,27 +351,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Edit functionality
     const editButton = document.getElementById('editButton');
     const editControls = document.getElementById('editControls');
-    let isEditMode = false;
 
     if (saveCurveButton) {
         saveCurveButton.addEventListener('click', () => {
             const name = curveNameInput.value.trim();
             if (name) {
-                // Check if name already exists
-                const saved = localStorage.getItem('simpleFlowCurves') || '{}';
-                const userCurves = JSON.parse(saved);
-                
-                if (userCurves[name]) {
-                    alert(`A curve named "${name}" already exists. Please choose a different name.`);
-                    return;
+                try {
+                    // Add user curve using library
+                    curveLibrary.addUserCurve(name, curveEditor.getCurve());
+                    createCurveButton(name, curveEditor.getCurve());
+                    curveNameInput.value = '';
+                } catch (error) {
+                    alert(error.message);
                 }
-                
-                // Save to localStorage
-                userCurves[name] = curveEditor.getCurve();
-                localStorage.setItem('simpleFlowCurves', JSON.stringify(userCurves));
-                
-                createCurveButton(name, curveEditor.getCurve());
-                curveNameInput.value = '';
             } else {
                 alert('Please enter a curve name');
             }
@@ -419,23 +403,18 @@ document.addEventListener('DOMContentLoaded', function() {
         starButton.addEventListener('click', () => {
             const curveName = prompt('Enter a name for this curve:');
             if (curveName && curveName.trim()) {
-                // Check if name already exists
-                const saved = localStorage.getItem('simpleFlowCurves') || '{}';
-                const userCurves = JSON.parse(saved);
-                
-                if (userCurves[curveName.trim()]) {
-                    alert(`A curve named "${curveName.trim()}" already exists. Please choose a different name.`);
-                } else {
-                    // Save to localStorage
-                    userCurves[curveName.trim()] = [...customCurve];
-                    localStorage.setItem('simpleFlowCurves', JSON.stringify(userCurves));
+                try {
+                    // Add user curve using library
+                    curveLibrary.addUserCurve(curveName.trim(), curveEditor.getCurve());
                     
                     // Create the button if we're in user curves mode
-                    if (currentMode === 'user') {
-                        createCurveButton(curveName.trim(), customCurve);
+                    if (curveLibrary.getMode() === 'user') {
+                        createCurveButton(curveName.trim(), curveEditor.getCurve());
                     }
                     
                     alert(`Curve "${curveName.trim()}" saved successfully!`);
+                } catch (error) {
+                    alert(error.message);
                 }
             } else if (curveName !== null) {
                 alert('Please enter a curve name');
@@ -487,22 +466,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                 // Prompt to save the imported curve
                                 const curveName = prompt('Enter a name for this curve (or leave blank to skip saving):');
                                 if (curveName && curveName.trim()) {
-                                    const saved = localStorage.getItem('simpleFlowCurves') || '{}';
-                                    const userCurves = JSON.parse(saved);
-                                    
-                                    if (userCurves[curveName.trim()]) {
-                                        alert(`A curve named "${curveName.trim()}" already exists. Please choose a different name.`);
-                                    } else {
-                                        // Save to localStorage
-                                        userCurves[curveName.trim()] = curveEditor.getCurve();
-                                        localStorage.setItem('simpleFlowCurves', JSON.stringify(userCurves));
+                                    try {
+                                        // Add user curve using library
+                                        curveLibrary.addUserCurve(curveName.trim(), curveEditor.getCurve());
                                         
                                         // Create the button if we're in user curves mode
-                                        if (currentMode === 'user') {
+                                        if (curveLibrary.getMode() === 'user') {
                                             createCurveButton(curveName.trim(), curveEditor.getCurve());
                                         }
                                         
                                         alert(`Curve "${curveName.trim()}" saved successfully!`);
+                                    } catch (error) {
+                                        alert(error.message);
                                     }
                                 }
                             } else {
@@ -538,7 +513,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Edit button functionality
     if (editButton) {
         editButton.addEventListener('click', () => {
-            isEditMode = !isEditMode;
+            const newEditMode = !curveLibrary.getEditMode();
+            curveLibrary.setEditMode(newEditMode);
             toggleEditMode();
         });
     }
@@ -546,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleEditMode() {
         const curveItems = document.querySelectorAll('.curve-item[data-curve="saved"]');
         
-        if (isEditMode) {
+        if (curveLibrary.getEditMode()) {
             editButton.textContent = 'Done';
             curveItems.forEach(item => {
                 item.classList.add('edit-mode');
@@ -561,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         item.remove();
                         
                         // Auto-exit edit mode after deletion
-                        isEditMode = false;
+                        curveLibrary.setEditMode(false);
                         editButton.textContent = 'Edit';
                         
                         // Remove edit mode from remaining items
@@ -590,12 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function deleteUserCurve(curveName) {
-        const saved = localStorage.getItem('simpleFlowCurves');
-        if (saved) {
-            const userCurves = JSON.parse(saved);
-            delete userCurves[curveName];
-            localStorage.setItem('simpleFlowCurves', JSON.stringify(userCurves));
-        }
+        curveLibrary.deleteUserCurve(curveName);
     }
 
     // Apply curve to keyframes
@@ -606,8 +577,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectedCurve === 'custom') {
             cubicBezier = curveEditor.getCurve();
         } else {
-            // Get from default curves
-            cubicBezier = defaultCurves[selectedCurve] || [0.25, 0.1, 0.25, 1];
+            // Get from library
+            cubicBezier = curveLibrary.getCurve(selectedCurve, curveLibrary.getMode() === 'user') || [0.25, 0.1, 0.25, 1];
         }
         
         // Calculate After Effects ease values
