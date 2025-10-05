@@ -45,9 +45,8 @@ class AfterEffects {
         return {
             outInfluence: Math.max(0.1, Math.min(100, cubicBezier[0] * 100)),
             inInfluence: Math.max(0.1, Math.min(100, (1 - cubicBezier[2]) * 100)),
-            // Swap speeds: high Y value means LOW speed (slow ease)
-            outSpeed: Math.max(0.1, Math.min(100, (1 - Math.abs(cubicBezier[1])) * 100)),
-            inSpeed: Math.max(0.1, Math.min(100, (1 - Math.abs(cubicBezier[3])) * 100))
+            outSpeed: Math.max(0.1, Math.min(100, (1 - cubicBezier[1]) * 100)),
+            inSpeed: Math.max(0.1, Math.min(100, cubicBezier[3] * 100))
         };
     }
     
@@ -83,6 +82,61 @@ class AfterEffects {
                     reject(new Error('Failed to get selection info'));
                 } else {
                     resolve(result);
+                }
+            });
+        });
+    }
+    
+    // Detect curve from selected keyframes
+    detectCurveFromKeyframes() {
+        return new Promise((resolve, reject) => {
+            const script = `
+                var _r = "";
+                try {
+                    var c = app.project.activeItem;
+                    if (!(c instanceof CompItem)) {
+                        _r = '{"success":false,"message":"No comp"}';
+                    } else if (c.selectedLayers.length === 0) {
+                        _r = '{"success":false,"message":"No layer selected"}';
+                    } else {
+                        var l = c.selectedLayers[0];
+                        var p = l.property("ADBE Transform Group").property("ADBE Position");
+                        if (!p || p.numKeys < 2) {
+                            _r = '{"success":false,"message":"No Position keyframes"}';
+                        } else {
+                            var o1 = p.keyOutTemporalEase(1);
+                            var i2 = p.keyInTemporalEase(2);
+                            if (o1.length === 0 || i2.length === 0) {
+                                _r = '{"success":false,"message":"No easing"}';
+                            } else {
+                                var cv0 = o1[0].influence / 100;
+                                var cv1 = 1 - (o1[0].speed / 100);
+                                var cv2 = 1 - (i2[0].influence / 100);
+                                var cv3 = i2[0].speed / 100;
+                                _r = '{"success":true,"curveValues":[' + 
+                                    cv0 + ',' + cv1 + ',' + cv2 + ',' + cv3 + 
+                                    '],"message":"Detected"}';
+                            }
+                        }
+                    }
+                } catch (e) {
+                    _r = '{"success":false,"message":"Error: ' + e.toString() + '"}';
+                }
+                _r;
+            `;
+            
+            this.csInterface.evalScript(script, (result) => {
+                if (result === 'EvalScript error.') {
+                    reject(new Error('EvalScript error'));
+                } else if (!result || result.trim() === '') {
+                    reject(new Error('Empty result'));
+                } else {
+                    try {
+                        const data = JSON.parse(result.trim());
+                        resolve(data);
+                    } catch (e) {
+                        reject(new Error('Parse error: ' + e.message + ' | Result: ' + result));
+                    }
                 }
             });
         });

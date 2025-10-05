@@ -136,6 +136,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // CurveDetect button functionality
+    const curveDetectButton = document.getElementById('exportButton');
+    if (curveDetectButton) {
+        curveDetectButton.addEventListener('click', async () => {
+            try {
+                const result = await afterEffects.detectCurveFromKeyframes();
+                
+                const debugInfo = result.debug ? `<br><br><small>Debug: ${result.debug}</small>` : '';
+                
+                if (result.success) {
+                    curveEditor.setCurve(result.curveValues);
+                    drawCurve(curveCanvas, 'custom');
+                    
+                    await ui.showNotificationModal('Curve Detected!', 
+                        `Detected curve from keyframes:<br><code style="background: #2a2a2a; padding: 2px 4px; border-radius: 2px; font-family: monospace;">[${result.curveValues.map(v => v.toFixed(3)).join(', ')}]</code>${debugInfo}`
+                    );
+                } else {
+                    await ui.showNotificationModal('Error', result.message + debugInfo, 'error');
+                }
+            } catch (error) {
+                await ui.showNotificationModal('Error', 'Failed to detect curve: ' + error.message, 'error');
+            }
+        });
+    }
+
     // Import button functionality
     const importButton = document.getElementById('importButton');
     if (importButton) {

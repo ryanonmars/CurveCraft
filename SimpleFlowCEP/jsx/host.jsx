@@ -154,5 +154,99 @@ function applyCurveToKeyframes(prop, curveType, easeData) {
     return 'Applied curve: ' + curveType + ' (out: ' + outSpeed + ',' + outInfluence + ' in: ' + inSpeed + ',' + inInfluence + ')';
 }
 
+function detectCurveFromKeyframes() {
+    try {
+        var comp = app.project.activeItem;
+        if (!(comp instanceof CompItem)) {
+            return JSON.stringify({success: false, message: 'No composition selected'});
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({success: false, message: 'No layers selected'});
+        }
+        
+        var layer = selectedLayers[0];
+        var property = null;
+        var debugInfo = [];
+        
+        debugInfo.push('Layer: ' + layer.name);
+        
+        if (layer.selectedProperties && layer.selectedProperties.length > 0) {
+            debugInfo.push('Found ' + layer.selectedProperties.length + ' selected properties');
+            for (var si = 0; si < layer.selectedProperties.length; si++) {
+                var p = layer.selectedProperties[si];
+                if (p.propertyType === PropertyType.PROPERTY) {
+                    debugInfo.push('Property: ' + p.name + ', Keys: ' + (p.numKeys || 0));
+                    if (p.numKeys && p.numKeys >= 2) {
+                        property = p;
+                        debugInfo.push('Using selected property: ' + p.name);
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (!property) {
+            debugInfo.push('No selected properties, trying Transform group');
+            try {
+                var transform = layer.property("ADBE Transform Group");
+                if (transform) {
+                    var positionProp = transform.property("ADBE Position");
+                    if (positionProp && positionProp.numKeys >= 2) {
+                        property = positionProp;
+                        debugInfo.push('Using Position from transform');
+                    }
+                }
+            } catch (e) {
+                debugInfo.push('Transform error: ' + e.toString());
+            }
+        }
+        
+        if (!property) {
+            return JSON.stringify({success: false, message: 'No properties with 2+ keyframes found', debug: debugInfo.join(', ')});
+        }
+        
+        var numKeys = property.numKeys;
+        debugInfo.push('Property: ' + property.name + ' has ' + numKeys + ' keyframes');
+        
+        if (numKeys < 2) {
+            return JSON.stringify({success: false, message: 'Need at least 2 keyframes', debug: debugInfo.join(', ')});
+        }
+        
+        var inEase = property.keyInTemporalEase(1);
+        var outEase = property.keyOutTemporalEase(1);
+        
+        debugInfo.push('InEase length: ' + inEase.length + ', OutEase length: ' + outEase.length);
+        
+        if (inEase.length === 0 || outEase.length === 0) {
+            return JSON.stringify({success: false, message: 'No easing data found on keyframes', debug: debugInfo.join(', ')});
+        }
+        
+        var inSpeed = inEase[0].speed;
+        var inInfluence = inEase[0].influence;
+        var outSpeed = outEase[0].speed;
+        var outInfluence = outEase[0].influence;
+        
+        debugInfo.push('Raw values - Out: ' + outSpeed + '/' + outInfluence + ', In: ' + inSpeed + '/' + inInfluence);
+        
+        var curveValues = [
+            outSpeed / 100,
+            outInfluence / 100,
+            inSpeed / 100,
+            inInfluence / 100
+        ];
+        
+        return JSON.stringify({
+            success: true,
+            curveValues: curveValues,
+            message: 'Curve detected from keyframes',
+            debug: debugInfo.join(', ')
+        });
+        
+    } catch (error) {
+        return JSON.stringify({success: false, message: 'Error: ' + error.toString() + ' at line ' + error.line});
+    }
+}
 
 

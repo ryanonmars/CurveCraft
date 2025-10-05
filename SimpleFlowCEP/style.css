@@ -216,16 +216,36 @@ button:active {
 }
 
 #importButton {
-    background-color: #666;
+    background-color: #ff8c00;
     font-size: 12px;
     padding: 2px 8px;
     position: absolute;
     left: 8px;
     top: 50%;
     transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #importButton:hover {
+    background-color: #888;
+}
+
+#exportButton {
+    background-color: #4CAF50;
+    font-size: 12px;
+    padding: 2px 8px;
+    position: absolute;
+    left: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#exportButton:hover {
     background-color: #888;
 }
 
