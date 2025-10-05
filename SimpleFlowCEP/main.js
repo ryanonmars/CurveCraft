@@ -91,29 +91,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     if (valuesDisplay) {
-        valuesDisplay.addEventListener('click', () => {
+        valuesDisplay.addEventListener('click', async () => {
             const values = customCurve.map(v => v.toFixed(3)).join(', ');
-            navigator.clipboard.writeText(`[${values}]`).then(() => {
-                // Visual feedback - briefly change color
-                valuesDisplay.style.color = '#4CAF50';
-                setTimeout(() => {
-                    valuesDisplay.style.color = '#ffffff';
-                }, 200);
-            }).catch(() => {
+            const curveString = `[${values}]`;
+            
+            try {
+                await navigator.clipboard.writeText(curveString);
+                await ui.showNotificationModal('Copied!', `Curve values copied to clipboard:<br><code style="background: #2a2a2a; padding: 2px 4px; border-radius: 2px; font-family: monospace;">${curveString}</code>`);
+            } catch (error) {
                 // Fallback for older browsers
                 const textArea = document.createElement('textarea');
-                textArea.value = `[${values}]`;
+                textArea.value = curveString;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
                 
-                // Visual feedback
-                valuesDisplay.style.color = '#4CAF50';
-                setTimeout(() => {
-                    valuesDisplay.style.color = '#ffffff';
-                }, 200);
-            });
+                await ui.showNotificationModal('Copied!', `Curve values copied to clipboard:<br><code style="background: #2a2a2a; padding: 2px 4px; border-radius: 2px; font-family: monospace;">${curveString}</code>`);
+            }
         });
     }
 

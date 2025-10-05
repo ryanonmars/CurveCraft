@@ -6,7 +6,7 @@ class CurveLibrary {
         // Default curves that are always available
         this.defaultCurves = {
             'Ease Out': [0.344, 0.053, 0.002, 1.000],
-            'Ease In': [0.927, 0.000, 0.852, 0.953],
+            'Ease In': [1.000, 0.000, 0.648, 0.939],
             'Ease In-Out': [0.694, 0.000, 0.306, 1.000],
             'Smooth Linear': [0.285, 0.000, 0.648, 1.000]
         };
