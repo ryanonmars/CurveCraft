@@ -5,10 +5,12 @@ A CEP (Common Extensibility Platform) extension that provides professional curve
 ## Features
 
 - **6 Curve Presets**: Linear, Ease In, Ease Out, Ease In-Out, Bounce, Elastic
+- **Curve Detection**: Extract curves from existing keyframes with the green detect button
 - **Visual Curve Preview**: Interactive canvas showing the selected curve
 - **Real-time Updates**: Curve changes as you select different presets
 - **Professional UI**: Dark theme matching After Effects
 - **Proper Keyframe Easing**: Uses After Effects' native easing system
+- **Copy & Apply**: Copy curve values and apply to other keyframes
 
 ## Installation
 
@@ -29,12 +31,20 @@ A CEP (Common Extensibility Platform) extension that provides professional curve
 
 ## Usage
 
+### Applying Curves
 1. **Open After Effects** and create a composition
 2. **Add keyframes** to any property (Position, Scale, Rotation, Opacity, etc.)
 3. **Select the layer** or specific properties
 4. **Open CurveCraft**: Window → Extensions → CurveCraft
 5. **Choose a curve** from the dropdown
 6. **Click "Apply Curve"** to apply the easing
+
+### Detecting Curves
+1. **Select a layer** with existing keyframes that have easing applied
+2. **Click the green detect button** (next to the import button)
+3. **View the detected curve** in the extension
+4. **Copy the values** by clicking on the curve values display
+5. **Apply to other keyframes** using the Apply Curve button
 
 ## Curve Types
 
@@ -56,16 +66,19 @@ The extension uses After Effects' native `setTemporalEaseAtKey()` function to cr
 
 ### File Structure
 ```
-CurveCraft/
+SimpleFlowCEP/
 ├── CSXS/
 │   └── manifest.xml          # CEP manifest
-├── client/
-│   ├── index.html            # Main UI
-│   ├── style.css             # Styling
-│   ├── curves.js             # Curve drawing logic
-│   └── main.js               # UI logic and AE communication
-└── jsx/
-    └── host.jsx              # After Effects integration
+├── assets/
+│   └── icons/                # Button icons
+├── js/
+│   ├── classes/              # JavaScript classes
+│   └── libs/                 # CSInterface library
+├── jsx/
+│   └── host.jsx              # After Effects integration
+├── index.html                # Main UI
+├── style.css                 # Styling
+└── main.js                   # UI logic and AE communication
 ```
 
 ## Troubleshooting
