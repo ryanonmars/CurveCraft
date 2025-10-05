@@ -9,6 +9,20 @@ class CurveEditor {
         this.dragHandle = null;
         this.canvasRect = null;
         
+        // Handle manipulation state
+        this.originalHandlePosition = null;
+        this.originalHandleLength = null;
+        this.originalHandleAngle = null;
+        
+        // Shift snapping state
+        this.snapToAxis = null; // 'x', 'y', or null
+        this.snapToBoundary = null; // 0 or 1 (which boundary we're locked to)
+        this.snapThreshold = 0.05; // 5% of graph size
+        
+        // Command key state
+        this.commandStartPosition = null;
+        this.commandStartLength = null;
+        
         this.init();
     }
     
@@ -24,7 +38,16 @@ class CurveEditor {
         this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
-        this.canvas.addEventListener('mouseleave', () => this.handleMouseLeave());
+        // Remove mouseleave handler to allow dragging outside canvas
+        // this.canvas.addEventListener('mouseleave', () => this.handleMouseLeave());
+        
+        // Add keyboard event listeners for modifier keys
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        document.addEventListener('keyup', (e) => this.handleKeyUp(e));
+        
+        // Add global mouse event listeners for dragging outside canvas
+        document.addEventListener('mousemove', (e) => this.handleGlobalMouseMove(e));
+        document.addEventListener('mouseup', (e) => this.handleGlobalMouseUp(e));
     }
     
     handleMouseDown(e) {
@@ -48,10 +71,12 @@ class CurveEditor {
             this.isDragging = true;
             this.dragHandle = 0;
             this.canvas.style.cursor = 'grabbing';
+            this.storeOriginalHandleState(0);
         } else if (distToP2 < 20) {
             this.isDragging = true;
             this.dragHandle = 1;
             this.canvas.style.cursor = 'grabbing';
+            this.storeOriginalHandleState(1);
         }
     }
     
@@ -65,7 +90,7 @@ class CurveEditor {
         const mouseX = (e.clientX - this.canvasRect.left) * scaleX;
         const mouseY = (e.clientY - this.canvasRect.top) * scaleY;
         
-        this.updateHandleFromPosition(this.dragHandle, mouseX, mouseY);
+        this.updateHandleFromPosition(this.dragHandle, mouseX, mouseY, e);
     }
     
     handleMouseUp() {
@@ -80,6 +105,25 @@ class CurveEditor {
         this.dragHandle = null;
         this.canvasRect = null;
         this.canvas.style.cursor = 'crosshair';
+    }
+    
+    handleGlobalMouseMove(e) {
+        if (!this.isDragging || !this.canvasRect) return;
+        
+        // Account for canvas scaling
+        const scaleX = this.canvas.width / this.canvasRect.width;
+        const scaleY = this.canvas.height / this.canvasRect.height;
+        
+        const mouseX = (e.clientX - this.canvasRect.left) * scaleX;
+        const mouseY = (e.clientY - this.canvasRect.top) * scaleY;
+        
+        this.updateHandleFromPosition(this.dragHandle, mouseX, mouseY, e);
+    }
+    
+    handleGlobalMouseUp(e) {
+        if (this.isDragging) {
+            this.handleMouseUp();
+        }
     }
     
     getHandlePosition(handleIndex) {
@@ -106,7 +150,7 @@ class CurveEditor {
         }
     }
     
-    updateHandleFromPosition(handleIndex, x, y) {
+    updateHandleFromPosition(handleIndex, x, y, event = null) {
         const width = this.canvas.width;
         const height = this.canvas.height;
         const padding = 20;
@@ -115,9 +159,39 @@ class CurveEditor {
         const graphX = padding;
         const graphY = padding;
         
-        // Convert mouse position to graph coordinates and clamp to bounds
-        const graphX_pos = Math.max(0, Math.min(1, (x - graphX) / graphWidth));
-        const graphY_pos = Math.max(0, Math.min(1, (y - graphY) / graphHeight));
+        // Convert mouse position to graph coordinates (allow values outside 0-1)
+        let graphX_pos = (x - graphX) / graphWidth;
+        let graphY_pos = (y - graphY) / graphHeight;
+        
+        // Apply modifier key constraints
+        if (event) {
+            const modifiers = this.getModifierKeys(event);
+            
+            if (modifiers.shift) {
+                // Apply magnetic snapping to axes
+                const snapped = this.applyShiftSnapping(graphX_pos, graphY_pos);
+                graphX_pos = snapped.x;
+                graphY_pos = snapped.y;
+            }
+            
+            if (modifiers.control && modifiers.shift) {
+                // Move both handles symmetrically
+                this.updateSymmetricHandles(handleIndex, graphX_pos, graphY_pos);
+                return;
+            }
+            
+            if (modifiers.control) {
+                // Lock length, allow angle change
+                this.updateHandleWithLockedLength(handleIndex, graphX_pos, graphY_pos);
+                return;
+            }
+            
+            if (modifiers.alt) {
+                // Lock angle, allow length change
+                this.updateHandleWithLockedAngle(handleIndex, graphX_pos, graphY_pos);
+                return;
+            }
+        }
         
         if (handleIndex === 0) {
             this.customCurve[0] = graphX_pos;
@@ -158,4 +232,249 @@ class CurveEditor {
             drawCurve(this.canvas, 'custom');
         }
     }
+    
+    // Helper methods for handle manipulation
+    getModifierKeys(event) {
+        return {
+            shift: event.shiftKey,
+            control: event.ctrlKey || event.metaKey, // Support both Ctrl and Cmd (Mac)
+            alt: event.altKey
+        };
+    }
+    
+    storeOriginalHandleState(handleIndex) {
+        const pos = this.getHandlePosition(handleIndex);
+        this.originalHandlePosition = { x: pos.x, y: pos.y };
+        
+        // Reset snap state for new drag
+        this.snapToAxis = null;
+        this.snapToBoundary = null;
+        this.commandStartPosition = null;
+        this.commandStartLength = null;
+        
+        // Calculate original length and angle from anchor point
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const padding = 20;
+        const graphWidth = width - (padding * 2);
+        const graphHeight = height - (padding * 2);
+        const graphX = padding;
+        const graphY = padding;
+        
+        if (handleIndex === 0) {
+            // P1 anchor is bottom-left
+            const anchorX = graphX;
+            const anchorY = graphY + graphHeight;
+            this.originalHandleLength = this.getDistance(anchorX, anchorY, pos.x, pos.y);
+            this.originalHandleAngle = Math.atan2(pos.y - anchorY, pos.x - anchorX);
+        } else {
+            // P2 anchor is top-right
+            const anchorX = graphX + graphWidth;
+            const anchorY = graphY;
+            this.originalHandleLength = this.getDistance(anchorX, anchorY, pos.x, pos.y);
+            this.originalHandleAngle = Math.atan2(pos.y - anchorY, pos.x - anchorX);
+        }
+    }
+    
+    updateSymmetricHandles(handleIndex, graphX_pos, graphY_pos) {
+        if (handleIndex === 0) {
+            // Update P1 and mirror to P2
+            this.customCurve[0] = graphX_pos;
+            this.customCurve[1] = 1 - graphY_pos;
+            this.customCurve[2] = 1 - graphX_pos;
+            this.customCurve[3] = graphY_pos;
+        } else {
+            // Update P2 and mirror to P1
+            this.customCurve[2] = graphX_pos;
+            this.customCurve[3] = 1 - graphY_pos;
+            this.customCurve[0] = 1 - graphX_pos;
+            this.customCurve[1] = graphY_pos;
+        }
+        this.updateDisplay();
+        this.drawCurve();
+    }
+    
+    updateHandleWithLockedLength(handleIndex, graphX_pos, graphY_pos) {
+        // Store current position as reference if not already set
+        if (!this.commandStartPosition) {
+            this.commandStartPosition = { x: graphX_pos, y: graphY_pos };
+            this.commandStartLength = this.calculateCurrentHandleLength(handleIndex);
+        }
+        
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const padding = 20;
+        const graphWidth = width - (padding * 2);
+        const graphHeight = height - (padding * 2);
+        const graphX = padding;
+        const graphY = padding;
+        
+        // Convert to pixel coordinates
+        const mouseX = graphX + graphX_pos * graphWidth;
+        const mouseY = graphY + graphY_pos * graphHeight;
+        
+        let anchorX, anchorY;
+        if (handleIndex === 0) {
+            anchorX = graphX;
+            anchorY = graphY + graphHeight;
+        } else {
+            anchorX = graphX + graphWidth;
+            anchorY = graphY;
+        }
+        
+        // Calculate new angle from mouse position
+        const newAngle = Math.atan2(mouseY - anchorY, mouseX - anchorX);
+        
+        // Calculate new position with locked length
+        const newX = anchorX + this.commandStartLength * Math.cos(newAngle);
+        const newY = anchorY + this.commandStartLength * Math.sin(newAngle);
+        
+        // Convert to normalized coordinates
+        const newGraphX = (newX - graphX) / graphWidth;
+        const newGraphY = (newY - graphY) / graphHeight;
+        
+        // Check if the position is within bounds
+        if (newGraphX >= 0 && newGraphX <= 1 && newGraphY >= 0 && newGraphY <= 1) {
+            // Only update if within bounds - this maintains locked length
+            if (handleIndex === 0) {
+                this.customCurve[0] = newGraphX;
+                this.customCurve[1] = 1 - newGraphY;
+            } else {
+                this.customCurve[2] = newGraphX;
+                this.customCurve[3] = 1 - newGraphY;
+            }
+            
+            this.updateDisplay();
+            this.drawCurve();
+        }
+        // If outside bounds, don't update - handle stays at last valid position
+    }
+    
+    updateHandleWithLockedAngle(handleIndex, graphX_pos, graphY_pos) {
+        if (!this.originalHandleAngle) return;
+        
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const padding = 20;
+        const graphWidth = width - (padding * 2);
+        const graphHeight = height - (padding * 2);
+        const graphX = padding;
+        const graphY = padding;
+        
+        // Convert to pixel coordinates
+        const mouseX = graphX + graphX_pos * graphWidth;
+        const mouseY = graphY + graphY_pos * graphHeight;
+        
+        let anchorX, anchorY;
+        if (handleIndex === 0) {
+            anchorX = graphX;
+            anchorY = graphY + graphHeight;
+        } else {
+            anchorX = graphX + graphWidth;
+            anchorY = graphY;
+        }
+        
+        // Calculate new length from mouse position
+        const newLength = this.getDistance(anchorX, anchorY, mouseX, mouseY);
+        
+        // Calculate new position with locked angle
+        const newX = anchorX + newLength * Math.cos(this.originalHandleAngle);
+        const newY = anchorY + newLength * Math.sin(this.originalHandleAngle);
+        
+        // Convert back to normalized coordinates
+        const newGraphX = Math.max(0, Math.min(1, (newX - graphX) / graphWidth));
+        const newGraphY = Math.max(0, Math.min(1, (newY - graphY) / graphHeight));
+        
+        if (handleIndex === 0) {
+            this.customCurve[0] = newGraphX;
+            this.customCurve[1] = 1 - newGraphY;
+        } else {
+            this.customCurve[2] = newGraphX;
+            this.customCurve[3] = 1 - newGraphY;
+        }
+        
+        this.updateDisplay();
+        this.drawCurve();
+    }
+    
+    handleKeyDown(event) {
+        // Store modifier state for real-time updates
+        this.currentModifiers = this.getModifierKeys(event);
+    }
+    
+    handleKeyUp(event) {
+        // Update modifier state
+        this.currentModifiers = this.getModifierKeys(event);
+    }
+    
+    applyShiftSnapping(x, y) {
+        // If we're already snapped to a boundary, maintain that constraint
+        if (this.snapToAxis === 'x') {
+            // Lock to X axis (horizontal boundary)
+            return { x: Math.max(0, Math.min(1, x)), y: this.snapToBoundary };
+        } else if (this.snapToAxis === 'y') {
+            // Lock to Y axis (vertical boundary)
+            return { x: this.snapToBoundary, y: Math.max(0, Math.min(1, y)) };
+        }
+        
+        // Find the nearest boundary
+        const distanceToLeft = Math.abs(x - 0);
+        const distanceToRight = Math.abs(x - 1);
+        const distanceToTop = Math.abs(y - 0);
+        const distanceToBottom = Math.abs(y - 1);
+        
+        const minDistance = Math.min(distanceToLeft, distanceToRight, distanceToTop, distanceToBottom);
+        
+        // Snap to the nearest boundary
+        if (minDistance === distanceToLeft) {
+            this.snapToAxis = 'y';
+            this.snapToBoundary = 0;
+            return { x: 0, y: Math.max(0, Math.min(1, y)) };
+        } else if (minDistance === distanceToRight) {
+            this.snapToAxis = 'y';
+            this.snapToBoundary = 1;
+            return { x: 1, y: Math.max(0, Math.min(1, y)) };
+        } else if (minDistance === distanceToTop) {
+            this.snapToAxis = 'x';
+            this.snapToBoundary = 0;
+            return { x: Math.max(0, Math.min(1, x)), y: 0 };
+        } else {
+            this.snapToAxis = 'x';
+            this.snapToBoundary = 1;
+            return { x: Math.max(0, Math.min(1, x)), y: 1 };
+        }
+    }
+    
+    getSnapXValue(x) {
+        // Snap to nearest 0.1 increment on X axis
+        return Math.round(x * 10) / 10;
+    }
+    
+    getSnapYValue(y) {
+        // Snap to nearest 0.1 increment on Y axis
+        return Math.round(y * 10) / 10;
+    }
+    
+    calculateCurrentHandleLength(handleIndex) {
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const padding = 20;
+        const graphWidth = width - (padding * 2);
+        const graphHeight = height - (padding * 2);
+        const graphX = padding;
+        const graphY = padding;
+        
+        let anchorX, anchorY;
+        if (handleIndex === 0) {
+            anchorX = graphX;
+            anchorY = graphY + graphHeight;
+        } else {
+            anchorX = graphX + graphWidth;
+            anchorY = graphY;
+        }
+        
+        const handlePos = this.getHandlePosition(handleIndex);
+        return this.getDistance(anchorX, anchorY, handlePos.x, handlePos.y);
+    }
+    
 }
