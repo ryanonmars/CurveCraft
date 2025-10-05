@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const valuesDisplay = document.getElementById('valuesDisplay');
     
     // Current custom curve values
-    let customCurve = [0.25, 0.1, 0.25, 1];
     let selectedCurve = 'custom';
     let currentMode = 'defaults';
     
@@ -26,10 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'Smooth Linear': [0.285, 0.000, 0.648, 1.000]
     };
     
-    // Interactive curve editing
-    let isDragging = false;
-    let dragHandle = null;
-    let canvasRect = null;
+    // Initialize curve editor
+    const curveEditor = new CurveEditor(curveCanvas, valuesDisplay);
 
 
 
@@ -199,10 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial curve draw
     if (curveCanvas) {
-        // Initialize custom curve first
-        window.customCurve = customCurve;
-        updateCustomCurve();
-        
         // Load default curves
         loadDefaultCurves();
         
@@ -288,145 +281,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update selected curve and preview
             selectedCurve = button.dataset.curve;
             
-            // Always update customCurve with the selected curve values
+            // Always update curveEditor with the selected curve values
             if (selectedCurve === 'custom') {
-                updateCustomCurve();
+                // Keep current custom curve
             } else {
-                // Load curve values into customCurve for editing
+                // Load curve values into curveEditor for editing
                 const curveValues = defaultCurves[selectedCurve] || [0.25, 0.1, 0.25, 1];
-                customCurve = [...curveValues];
-                window.customCurve = customCurve;
-                updateCustomCurve();
+                curveEditor.setCurve(curveValues);
             }
             
             drawCurve(curveCanvas, selectedCurve);
         });
     });
 
-    // Interactive curve editing functions
-    function updateCustomCurve() {
-        // Set global variable for curves.js
-        window.customCurve = customCurve;
-        valuesDisplay.textContent = `[${customCurve.map(v => v.toFixed(2)).join(', ')}]`;
-        drawCurve(curveCanvas, 'custom');
-    }
-    
-    function getHandlePosition(handleIndex) {
-        const width = curveCanvas.width;
-        const height = curveCanvas.height;
-        const padding = 20;
-        const graphWidth = width - (padding * 2);
-        const graphHeight = height - (padding * 2);
-        const graphX = padding;
-        const graphY = padding;
-        
-        // Use the same values as the curve drawing
-        const currentValues = window.customCurve || customCurve || [0.25, 0.1, 0.25, 1];
-        
-        if (handleIndex === 0) {
-            // P1 handle - clamp to graph bounds
-            return {
-                x: Math.max(graphX, Math.min(graphX + graphWidth, graphX + graphWidth * currentValues[0])),
-                y: Math.max(graphY, Math.min(graphY + graphHeight, graphY + graphHeight * (1 - currentValues[1])))
-            };
-        } else {
-            // P2 handle - clamp to graph bounds
-            return {
-                x: Math.max(graphX, Math.min(graphX + graphWidth, graphX + graphWidth * currentValues[2])),
-                y: Math.max(graphY, Math.min(graphY + graphHeight, graphY + graphHeight * (1 - currentValues[3])))
-            };
-        }
-    }
-    
-    function updateHandleFromPosition(handleIndex, x, y) {
-        const width = curveCanvas.width;
-        const height = curveCanvas.height;
-        const padding = 20;
-        const graphWidth = width - (padding * 2);
-        const graphHeight = height - (padding * 2);
-        const graphX = padding;
-        const graphY = padding;
-        
-        // Convert mouse position to graph coordinates and clamp to bounds
-        const graphX_pos = Math.max(0, Math.min(1, (x - graphX) / graphWidth));
-        const graphY_pos = Math.max(0, Math.min(1, (y - graphY) / graphHeight));
-        
-        if (handleIndex === 0) {
-            customCurve[0] = graphX_pos;
-            customCurve[1] = 1 - graphY_pos;
-        } else {
-            customCurve[2] = graphX_pos;
-            customCurve[3] = 1 - graphY_pos;
-        }
-        
-        updateCustomCurve();
-    }
-    
-    function getDistance(x1, y1, x2, y2) {
-        return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-    }
-    
-    // Canvas mouse events for interactive editing
-    if (curveCanvas) {
-        // Make canvas cursor changeable
-        curveCanvas.style.cursor = 'crosshair';
-        
-        curveCanvas.addEventListener('mousedown', (e) => {
-            // Always allow handle adjustment
-            canvasRect = curveCanvas.getBoundingClientRect();
-            
-            // Account for canvas scaling (display size vs actual size)
-            const scaleX = curveCanvas.width / canvasRect.width;
-            const scaleY = curveCanvas.height / canvasRect.height;
-            
-            const mouseX = (e.clientX - canvasRect.left) * scaleX;
-            const mouseY = (e.clientY - canvasRect.top) * scaleY;
-            
-            // Check which handle is being dragged
-            const p1 = getHandlePosition(0);
-            const p2 = getHandlePosition(1);
-            
-            const distToP1 = getDistance(mouseX, mouseY, p1.x, p1.y);
-            const distToP2 = getDistance(mouseX, mouseY, p2.x, p2.y);
-            
-            if (distToP1 < 20) {
-                isDragging = true;
-                dragHandle = 0;
-                curveCanvas.style.cursor = 'grabbing';
-            } else if (distToP2 < 20) {
-                isDragging = true;
-                dragHandle = 1;
-                curveCanvas.style.cursor = 'grabbing';
-            }
-        });
-        
-        curveCanvas.addEventListener('mousemove', (e) => {
-            if (!isDragging || !canvasRect) return;
-            
-            // Account for canvas scaling
-            const scaleX = curveCanvas.width / canvasRect.width;
-            const scaleY = curveCanvas.height / canvasRect.height;
-            
-            const mouseX = (e.clientX - canvasRect.left) * scaleX;
-            const mouseY = (e.clientY - canvasRect.top) * scaleY;
-            
-            updateHandleFromPosition(dragHandle, mouseX, mouseY);
-        });
-        
-        curveCanvas.addEventListener('mouseup', () => {
-            isDragging = false;
-            dragHandle = null;
-            canvasRect = null;
-            curveCanvas.style.cursor = 'crosshair';
-        });
-        
-        curveCanvas.addEventListener('mouseleave', () => {
-            isDragging = false;
-            dragHandle = null;
-            canvasRect = null;
-            curveCanvas.style.cursor = 'crosshair';
-        });
-    }
 
     // Function to create a new curve button
     function createCurveButton(name, curveValues) {
@@ -469,9 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
             button.classList.add('active');
             
             // Load the saved curve
-            customCurve = [...curveValues];
-            window.customCurve = customCurve;
-            updateCustomCurve();
+            curveEditor.setCurve(curveValues);
             drawCurve(curveCanvas, 'custom');
         });
         
@@ -510,10 +375,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Save to localStorage
-                userCurves[name] = [...customCurve];
+                userCurves[name] = curveEditor.getCurve();
                 localStorage.setItem('simpleFlowCurves', JSON.stringify(userCurves));
                 
-                createCurveButton(name, customCurve);
+                createCurveButton(name, curveEditor.getCurve());
                 curveNameInput.value = '';
             } else {
                 alert('Please enter a curve name');
@@ -614,9 +479,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const validValues = values.every(v => typeof v === 'number' && v >= 0 && v <= 1);
                             
                             if (validValues) {
-                                customCurve = [...values];
-                                window.customCurve = customCurve;
-                                updateCustomCurve();
+                                curveEditor.setCurve(values);
                                 drawCurve(curveCanvas, 'custom');
                                 selectedCurve = 'custom';
                                 cleanup();
@@ -631,12 +494,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                         alert(`A curve named "${curveName.trim()}" already exists. Please choose a different name.`);
                                     } else {
                                         // Save to localStorage
-                                        userCurves[curveName.trim()] = [...customCurve];
+                                        userCurves[curveName.trim()] = curveEditor.getCurve();
                                         localStorage.setItem('simpleFlowCurves', JSON.stringify(userCurves));
                                         
                                         // Create the button if we're in user curves mode
                                         if (currentMode === 'user') {
-                                            createCurveButton(curveName.trim(), customCurve);
+                                            createCurveButton(curveName.trim(), curveEditor.getCurve());
                                         }
                                         
                                         alert(`Curve "${curveName.trim()}" saved successfully!`);
@@ -741,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get cubic-bezier values for the selected curve
         var cubicBezier;
         if (selectedCurve === 'custom') {
-            cubicBezier = customCurve;
+            cubicBezier = curveEditor.getCurve();
         } else {
             // Get from default curves
             cubicBezier = defaultCurves[selectedCurve] || [0.25, 0.1, 0.25, 1];
