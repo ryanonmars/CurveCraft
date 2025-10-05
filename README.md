@@ -1,120 +1,50 @@
-# CurveCraft - Professional Curve Editor for After Effects
+# CurveCraft - Instruction Manual
 
-A CEP (Common Extensibility Platform) extension that provides professional curve editing and easing application for After Effects keyframes, inspired by Flow's intuitive interface.
+## What is CurveCraft?
+CurveCraft is a visual curve editor that lets you apply smooth, professional easing curves to your existing keyframes in After Effects. 
 
-## Features
+## Getting Started
 
-- **6 Curve Presets**: Linear, Ease In, Ease Out, Ease In-Out, Bounce, Elastic
-- **Curve Detection**: Extract curves from existing keyframes with the green detect button
-- **Visual Curve Preview**: Interactive canvas showing the selected curve
-- **Real-time Updates**: Curve changes as you select different presets
-- **Professional UI**: Dark theme matching After Effects
-- **Proper Keyframe Easing**: Uses After Effects' native easing system
-- **Copy & Apply**: Copy curve values and apply to other keyframes
+### Step 1: Install CurveCraft
+1. Download the `CurveCraft.zxp` file
+2. Install [ZXPInstaller](https://zxpinstaller.com/) if you don't have it
+3. Open ZXPInstaller and drag the `CurveCraft.zxp` file into it
+4. Click "Install"
+5. Restart After Effects
+6. Go to **Window → Extensions → CurveCraft** to open the panel
 
-## Installation
+### Step 2: Apply Curves to Your Keyframes
+1. Create your keyframes in After Effects (at least 2 keyframes)
+2. Select the keyframes you want to apply curves to
+3. **Select a Curve**: Click on one of the preset curves at the bottom
+4. **Customize**: Drag the orange handles to change the curve shape or leave it defualt
+5. **Apply**: Click "Apply Curve" to apply it to your keyframes
 
-### Method 1: Manual Installation (Recommended)
+### Saving Your Own Curves
+1. **Create your curve**: Edit the handles until you're happy
+2. **Save it**: Click the star (★) button
+3. **Name it**: Give your curve a name
+4. **Use it again**: Switch to "User Curves" to find your saved curves
 
-1. **Copy the extension folder** to your After Effects CEP extensions directory:
-   - **Windows**: `C:\Program Files\Adobe\Adobe After Effects [version]\Support Files\CEP\extensions\`
-   - **macOS**: `~/Library/Application Support/Adobe/CEP/extensions/`
+### Keyboard Shortcuts
+- **Hold Shift**: Snap handles to graph boundaries for precise control
+- **Hold Ctrl/Cmd**: Lock the handle length while changing angle
+- **Hold Alt/Option**: Lock the handle angle while changing length
+- **Ctrl/Cmd+Shift**: Move both handles together (symmetric curves)
 
-2. **Enable unsigned extensions** (required for development):
-   - **Windows**: Create/edit `C:\Users\[username]\AppData\Roaming\Adobe\CEP\extensions\com.adobe.CSXS.6.0\`
-   - **macOS**: Create/edit `~/Library/Application Support/Adobe/CEP/extensions/com.adobe.CSXS.6.0/`
-   - Add a file called `debug` (no extension) with content: `1`
+### Import/Export Curves
+- **Import**: Click the import button (↓) to load a curve from your clipboard
+- **Export**: Click the upload button (↑) to copy the curve of selected keyframes
+- **Star (★)**: Save your custom curve as a preset
 
-3. **Restart After Effects**
-
-4. **Find the extension**: Window → Extensions → CurveCraft
-
-## Usage
-
-### Applying Curves
-1. **Open After Effects** and create a composition
-2. **Add keyframes** to any property (Position, Scale, Rotation, Opacity, etc.)
-3. **Select the layer** or specific properties
-4. **Open CurveCraft**: Window → Extensions → CurveCraft
-5. **Choose a curve** from the dropdown
-6. **Click "Apply Curve"** to apply the easing
-
-### Detecting Curves
-1. **Select a layer** with existing keyframes that have easing applied
-2. **Click the green detect button** (next to the import button)
-3. **View the detected curve** in the extension
-4. **Copy the values** by clicking on the curve values display
-5. **Apply to other keyframes** using the Apply Curve button
-
-## Curve Types
-
-- **Linear**: No easing (0, 0, 1, 1)
-- **Ease In**: Slow start (0.42, 0, 1, 1)
-- **Ease Out**: Slow end (0, 0, 0.58, 1)
-- **Ease In-Out**: Slow start and end (0.42, 0, 0.58, 1)
-- **Bounce**: Bouncy animation
-- **Elastic**: Elastic animation
-
-## Technical Details
-
-### How It Works
-The extension uses After Effects' native `setTemporalEaseAtKey()` function to create smooth bezier curves. Unlike simple expressions, this approach:
-- Preserves your original keyframe positions
-- Creates mathematically accurate curves
-- Works with all property types (Position, Scale, Rotation, Opacity, etc.)
-- Shows curves in the Graph Editor as native keyframe easing
-
-### File Structure
-```
-SimpleFlowCEP/
-├── CSXS/
-│   └── manifest.xml          # CEP manifest
-├── assets/
-│   └── icons/                # Button icons
-├── js/
-│   ├── classes/              # JavaScript classes
-│   └── libs/                 # CSInterface library
-├── jsx/
-│   └── host.jsx              # After Effects integration
-├── index.html                # Main UI
-├── style.css                 # Styling
-└── main.js                   # UI logic and AE communication
-```
 
 ## Troubleshooting
 
-### Extension Not Appearing
-1. Check that the extension is in the correct CEP directory
-2. Verify the debug file is created and contains "1"
-3. Restart After Effects completely
-4. Check After Effects version compatibility (2020+)
+### CurveCraft Won't Open
+- Make sure After Effects is restarted after installation
+- Check that you have the latest version of After Effects
+- Try reinstalling the extension
 
-### Curves Not Applying
-1. Ensure you have keyframes on the selected properties
-2. Check that properties have at least 2 keyframes
-3. Try selecting the specific property instead of just the layer
-4. Verify the extension shows "Success" message
-
-### Performance Issues
-1. The extension uses native After Effects easing, so it's very efficient
-2. No expressions are added, so there's no performance impact
-3. Curves are visible in the Graph Editor as native keyframe easing
-
-## Why CEP Instead of Scripts?
-
-After Effects' ExtendScript API is very limited when it comes to creating custom curves. The commercial Flow plugin works because it's a CEP extension that can:
-
-- **Create Interactive UIs**: HTML5 canvas for curve editing
-- **Real-time Communication**: Direct integration with After Effects
-- **Professional Interface**: Modern, responsive UI
-- **Native Keyframe Manipulation**: Direct access to After Effects' easing system
-
-## License
-
-This extension is provided as-is for educational and personal use. It replicates functionality of the commercial Flow plugin by Lova.
-
-## Credits
-
-- Inspired by Flow plugin by Lova (flow.lova.tt)
-- Built using Adobe CEP (Common Extensibility Platform)
-- Based on the CEP extension template approach
+### Curves Don't Apply
+- Make sure you have at least 2 keyframes selected
+- Check that your property can be animated (some properties are locked)
