@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const starButton = document.getElementById('starButton');
 
     if (saveCurveButton) {
-        saveCurveButton.addEventListener('click', () => {
+        saveCurveButton.addEventListener('click', async () => {
             const name = curveNameInput.value.trim();
             if (name) {
                 try {
@@ -79,11 +79,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     curveLibrary.addUserCurve(name, curveEditor.getCurve());
                     ui.createCurveButton(name, curveEditor.getCurve());
                     curveNameInput.value = '';
+                    await ui.showNotificationModal('Success', `Curve "${name}" saved successfully!`);
                 } catch (error) {
-                    alert(error.message);
+                    await ui.showNotificationModal('Error', error.message, 'error');
                 }
             } else {
-                alert('Please enter a curve name');
+                await ui.showNotificationModal('Error', 'Please enter a curve name', 'error');
             }
         });
     }
@@ -118,10 +119,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Star button functionality
     if (starButton) {
-        starButton.addEventListener('click', () => {
-            const curveName = prompt('Enter a name for this curve:');
-            if (curveName && curveName.trim()) {
-                try {
+        starButton.addEventListener('click', async () => {
+            try {
+                const curveName = await ui.showNameInputModal('Save Curve', 'Enter a name for this curve');
+                if (curveName && curveName.trim()) {
                     // Add user curve using library
                     curveLibrary.addUserCurve(curveName.trim(), curveEditor.getCurve());
                     
@@ -130,12 +131,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         ui.createCurveButton(curveName.trim(), curveEditor.getCurve());
                     }
                     
-                    alert(`Curve "${curveName.trim()}" saved successfully!`);
-                } catch (error) {
-                    alert(error.message);
+                    await ui.showNotificationModal('Success', `Curve "${curveName.trim()}" saved successfully!`);
                 }
-            } else if (curveName !== null) {
-                alert('Please enter a curve name');
+            } catch (error) {
+                if (error.message !== 'Name input cancelled') {
+                    await ui.showNotificationModal('Error', error.message, 'error');
+                }
             }
         });
     }
@@ -143,85 +144,50 @@ document.addEventListener('DOMContentLoaded', function() {
     // Import button functionality
     const importButton = document.getElementById('importButton');
     if (importButton) {
-        importButton.addEventListener('click', () => {
-            // Create a simple input dialog
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.placeholder = 'Paste curve values: [0.250, 0.100, 0.250, 1.000]';
-            input.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; padding: 10px; font-size: 14px; width: 300px;';
-            
-            const overlay = document.createElement('div');
-            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;';
-            
-            const button = document.createElement('button');
-            button.textContent = 'Import';
-            button.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin-top: 40px; padding: 8px 16px; z-index: 1000;';
-            
-            overlay.appendChild(input);
-            overlay.appendChild(button);
-            document.body.appendChild(overlay);
-            input.focus();
-            
-            function cleanup() {
-                document.body.removeChild(overlay);
-            }
-            
-            button.addEventListener('click', () => {
-                const curveString = input.value.trim();
-                if (curveString) {
-                    try {
-                        const values = JSON.parse(curveString);
+        importButton.addEventListener('click', async () => {
+            try {
+                // Show modal and get curve string
+                const curveString = await ui.showImportModal();
+                
+                // Parse and validate curve values
+                const values = JSON.parse(curveString);
+                
+                if (Array.isArray(values) && values.length === 4) {
+                    const validValues = values.every(v => typeof v === 'number' && v >= 0 && v <= 1);
+                    
+                    if (validValues) {
+                        curveEditor.setCurve(values);
+                        drawCurve(curveCanvas, 'custom');
+                        selectedCurve = 'custom';
                         
-                        if (Array.isArray(values) && values.length === 4) {
-                            const validValues = values.every(v => typeof v === 'number' && v >= 0 && v <= 1);
-                            
-                            if (validValues) {
-                                curveEditor.setCurve(values);
-                                drawCurve(curveCanvas, 'custom');
-                                selectedCurve = 'custom';
-                                cleanup();
+                        // Prompt to save the imported curve
+                        try {
+                            const curveName = await ui.showNameInputModal('Save Imported Curve', 'Enter a name for this curve');
+                            if (curveName && curveName.trim()) {
+                                // Add user curve using library
+                                curveLibrary.addUserCurve(curveName.trim(), curveEditor.getCurve());
                                 
-                                // Prompt to save the imported curve
-                                const curveName = prompt('Enter a name for this curve (or leave blank to skip saving):');
-                                if (curveName && curveName.trim()) {
-                                    try {
-                                        // Add user curve using library
-                                        curveLibrary.addUserCurve(curveName.trim(), curveEditor.getCurve());
-                                        
-                                        // Create the button if we're in user curves mode
-                                        if (curveLibrary.getMode() === 'user') {
-                                            ui.createCurveButton(curveName.trim(), curveEditor.getCurve());
-                                        }
-                                        
-                                        alert(`Curve "${curveName.trim()}" saved successfully!`);
-                                    } catch (error) {
-                                        alert(error.message);
-                                    }
+                                // Create the button if we're in user curves mode
+                                if (curveLibrary.getMode() === 'user') {
+                                    ui.createCurveButton(curveName.trim(), curveEditor.getCurve());
                                 }
-                            } else {
-                                console.log('Invalid curve values. All values must be numbers between 0 and 1.');
+                                
+                                await ui.showNotificationModal('Success', `Curve "${curveName.trim()}" saved successfully!`);
                             }
-                        } else {
-                            console.log('Invalid format. Please use format: [0.250, 0.100, 0.250, 1.000]');
+                        } catch (error) {
+                            // User cancelled - this is fine, just skip saving
                         }
-                    } catch (error) {
-                        console.log('Invalid format. Please use format: [0.250, 0.100, 0.250, 1.000]');
+                    } else {
+                        await ui.showNotificationModal('Error', 'Invalid curve values. All values must be numbers between 0 and 1.', 'error');
                     }
+                } else {
+                    await ui.showNotificationModal('Error', 'Invalid format. Please use format: [0.250, 0.100, 0.250, 1.000]', 'error');
                 }
-                cleanup();
-            });
-            
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) cleanup();
-            });
-            
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    button.click();
-                } else if (e.key === 'Escape') {
-                    cleanup();
+            } catch (error) {
+                if (error.message !== 'Import cancelled') {
+                    await ui.showNotificationModal('Error', 'Invalid format. Please use format: [0.250, 0.100, 0.250, 1.000]', 'error');
                 }
-            });
+            }
         });
     }
 

@@ -292,6 +292,11 @@ button:active {
     font-size: 12px;
     font-style: italic;
     padding: 20px;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
 }
 
 .library-toggle {
@@ -429,6 +434,114 @@ button:active {
 
 .edit-button:hover {
     color: #ffffff;
+}
+
+/* Import Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    margin-bottom: 15px;
+}
+
+.modal-title {
+    margin: 0;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.modal-body {
+    margin-bottom: 20px;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 10px;
+    background: #1e1e1e;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.modal-input:focus {
+    outline: none;
+    border-color: #0078d4;
+}
+
+.modal-input::placeholder {
+    color: #888;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modal-button-primary {
+    background-color: #0078d4;
+    color: #ffffff;
+}
+
+.modal-button-primary:hover {
+    background-color: #106ebe;
+}
+
+.modal-button-secondary {
+    background-color: #555;
+    color: #ffffff;
+}
+
+.modal-button-secondary:hover {
+    background-color: #666;
+}
+
+.modal-button-error {
+    background-color: #d13438;
+    color: #ffffff;
+}
+
+.modal-button-error:hover {
+    background-color: #b71c1c;
+}
+
+.modal-example {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #888;
+    font-style: italic;
 }
 
 /* Delete X buttons */

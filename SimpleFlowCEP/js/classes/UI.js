@@ -107,6 +107,11 @@ class UI {
         // Add to container
         this.savedCurvesContainer.appendChild(button);
         
+        // Show edit controls if we're in user mode and this is the first curve
+        if (this.curveLibrary.getMode() === 'user' && this.curveLibrary.getUserCurveCount() === 1) {
+            this.editControls.style.display = 'block';
+        }
+        
         // Draw the preview after a short delay to ensure DOM is ready
         setTimeout(() => {
             this.drawSmallPreview(`${name}-preview`, 'saved', curveValues);
@@ -352,5 +357,207 @@ class UI {
         if (this.savedCurvesContainer) {
             mutationObserver.observe(this.savedCurvesContainer, { childList: true, subtree: true });
         }
+    }
+    
+    // Show import modal
+    showImportModal() {
+        return new Promise((resolve, reject) => {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <h3 class="modal-title">Import Curve</h3>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="modal-input" id="importInput" placeholder="Paste curve values: [0.250, 0.100, 0.250, 1.000]">
+                    <div class="modal-example">Example: [0.25, 0.1, 0.25, 1]</div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button modal-button-secondary" id="cancelImport">Cancel</button>
+                    <button class="modal-button modal-button-primary" id="confirmImport">Import</button>
+                </div>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Focus input
+            const input = modal.querySelector('#importInput');
+            input.focus();
+            
+            // Event handlers
+            const cleanup = () => {
+                document.body.removeChild(overlay);
+            };
+            
+            const cancelBtn = modal.querySelector('#cancelImport');
+            const confirmBtn = modal.querySelector('#confirmImport');
+            
+            cancelBtn.addEventListener('click', () => {
+                cleanup();
+                reject(new Error('Import cancelled'));
+            });
+            
+            confirmBtn.addEventListener('click', () => {
+                const value = input.value.trim();
+                if (value) {
+                    cleanup();
+                    resolve(value);
+                } else {
+                    alert('Please enter curve values');
+                }
+            });
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    cleanup();
+                    reject(new Error('Import cancelled'));
+                }
+            });
+            
+            // Keyboard handlers
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    confirmBtn.click();
+                } else if (e.key === 'Escape') {
+                    cancelBtn.click();
+                }
+            });
+        });
+    }
+    
+    // Show name input modal
+    showNameInputModal(title, placeholder = '') {
+        return new Promise((resolve, reject) => {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <h3 class="modal-title">${title}</h3>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="modal-input" id="nameInput" placeholder="${placeholder}" maxlength="20">
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button modal-button-secondary" id="cancelName">Cancel</button>
+                    <button class="modal-button modal-button-primary" id="confirmName">Save</button>
+                </div>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Focus input
+            const input = modal.querySelector('#nameInput');
+            input.focus();
+            
+            // Event handlers
+            const cleanup = () => {
+                document.body.removeChild(overlay);
+            };
+            
+            const cancelBtn = modal.querySelector('#cancelName');
+            const confirmBtn = modal.querySelector('#confirmName');
+            
+            cancelBtn.addEventListener('click', () => {
+                cleanup();
+                reject(new Error('Name input cancelled'));
+            });
+            
+            confirmBtn.addEventListener('click', () => {
+                const value = input.value.trim();
+                if (value) {
+                    cleanup();
+                    resolve(value);
+                } else {
+                    alert('Please enter a name');
+                }
+            });
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    cleanup();
+                    reject(new Error('Name input cancelled'));
+                }
+            });
+            
+            // Keyboard handlers
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    confirmBtn.click();
+                } else if (e.key === 'Escape') {
+                    cancelBtn.click();
+                }
+            });
+        });
+    }
+    
+    // Show notification modal
+    showNotificationModal(title, message, type = 'info') {
+        return new Promise((resolve) => {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.className = 'modal-content';
+            
+            // Set button color based on type
+            const buttonClass = type === 'error' ? 'modal-button-error' : 'modal-button-primary';
+            
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <h3 class="modal-title">${title}</h3>
+                </div>
+                <div class="modal-body">
+                    <p style="margin: 0; color: #ffffff;">${message}</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-button ${buttonClass}" id="confirmNotification">OK</button>
+                </div>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Event handlers
+            const cleanup = () => {
+                document.body.removeChild(overlay);
+                resolve();
+            };
+            
+            const confirmBtn = modal.querySelector('#confirmNotification');
+            confirmBtn.addEventListener('click', cleanup);
+            
+            // Close on overlay click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    cleanup();
+                }
+            });
+            
+            // Keyboard handlers
+            overlay.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === 'Escape') {
+                    cleanup();
+                }
+            });
+            
+            // Focus the button
+            confirmBtn.focus();
+        });
     }
 }
