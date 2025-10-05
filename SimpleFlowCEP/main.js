@@ -146,10 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.success) {
                     curveEditor.setCurve(result.curveValues);
                     drawCurve(curveCanvas, 'custom');
-                    
-                    await ui.showNotificationModal('Curve Detected!', 
-                        `Detected curve from keyframes:<br><code style="background: #2a2a2a; padding: 2px 4px; border-radius: 2px; font-family: monospace;">[${result.curveValues.map(v => v.toFixed(3)).join(', ')}]</code>`
-                    );
                 } else {
                     await ui.showNotificationModal('Error', result.message, 'error');
                 }
